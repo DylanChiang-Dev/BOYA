@@ -1,5 +1,5 @@
 // Projects: a named workspace folder under the base dir, marked by
-// `<folder>/.openscience/project.json`. The folder IS the workspace — sessions
+// `<folder>/.boya/project.json`. The folder IS the workspace — sessions
 // group under a project by their `directory`, so no registry or database
 // exists to drift out of sync. Folders without the marker stay plain dated
 // session workspaces.
@@ -34,7 +34,7 @@ pub struct ProjectInfo {
 }
 
 fn meta_file(dir: &Path) -> PathBuf {
-    dir.join(".openscience").join("project.json")
+    dir.join(".boya").join("project.json")
 }
 
 fn now_ms() -> u64 {
@@ -216,8 +216,8 @@ mod tests {
         let base = std::env::temp_dir().join(format!("os-project-bad-{}", std::process::id()));
         let _ = fs::remove_dir_all(&base);
         let dir = base.join("broken");
-        fs::create_dir_all(dir.join(".openscience")).unwrap();
-        fs::write(dir.join(".openscience").join("project.json"), "{not json").unwrap();
+        fs::create_dir_all(dir.join(".boya")).unwrap();
+        fs::write(dir.join(".boya").join("project.json"), "{not json").unwrap();
         assert!(read_meta(&dir).is_none());
         let _ = fs::remove_dir_all(&base);
     }

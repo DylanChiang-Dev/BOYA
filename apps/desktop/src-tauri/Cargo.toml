@@ -1,12 +1,12 @@
 [package]
-name = "ai4s-workbench"
-version = "0.1.9"
-description = "Open Science Desktop"
-authors = ["AI4S Workbench contributors"]
+name = "boya-desktop"
+version = "0.1.0"
+description = "Boya Desktop"
+authors = ["Dylan Chiang", "Boya Desktop contributors"]
 edition = "2021"
 
 [lib]
-name = "ai4s_workbench_lib"
+name = "boya_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

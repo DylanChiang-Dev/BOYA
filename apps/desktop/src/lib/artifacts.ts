@@ -1,7 +1,7 @@
 // Turn the agent's file-writing tool calls into traceable artifacts.
 // Pure and transport-agnostic so it can be unit-tested without a live runtime.
 
-import type { ToolUpdatedEvent } from "@ai4s/sdk";
+import type { ToolUpdatedEvent } from "@boya/sdk";
 import type {
   ArtifactBlock,
   ArtifactInspector,
@@ -9,7 +9,7 @@ import type {
   ArtifactVersion,
   FilePreviewInspector,
   NotebookFileInspector,
-} from "@ai4s/shared";
+} from "@boya/shared";
 
 const EXT_KIND: Record<string, ArtifactKind> = {
   png: "figure", jpg: "figure", jpeg: "figure", gif: "figure", webp: "figure", svg: "figure",

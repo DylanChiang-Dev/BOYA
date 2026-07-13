@@ -126,7 +126,7 @@ git-ignored and fetched by `scripts/dev/fetch-opencode.sh`). The Rust side
 - runs the **bundled** binary (not the user's `PATH`);
 - on a **dedicated free port** (not the default 4096);
 - with an **app-private** config/data dir via `XDG_CONFIG_HOME`/`XDG_DATA_HOME` under
-  `~/Library/Application Support/com.ai4s.workbench/runtime/` (macOS) — so the user's
+  `~/Library/Application Support/dev.dylanchiang.boya/runtime/` (macOS) — so the user's
   sessions/config are never touched;
 - but it **shares the user's login**: the user's `auth.json` (OpenCode credentials / free
   access) is copied read-only into the sandbox at startup, so the bundled runtime can
@@ -221,8 +221,8 @@ the OpenCode server; start an optional Jupyter Gateway; monitor runtime health.
 ### 8.3 Runtime directory
 
 ```text
-~/.ai4s-workbench/
-  config/  runtime/{opencode,python,node}/  profiles/ai4s-workbench/
+~/.boya-desktop/
+  config/  runtime/{opencode,python,node}/  profiles/boya-desktop/
   workspaces/  logs/  cache/  secrets/
 ```
 
@@ -428,7 +428,7 @@ the cause, a fallback suggestion, a retry button, and an edit-plan button.
 Monorepo:
 
 ```text
-ai4s-workbench/
+boya-desktop/
   apps/desktop/{src,src-tauri}/
   packages/{ui,shared,sdk}/
   runtime/{manager,opencode-profile,mcp,skills}/

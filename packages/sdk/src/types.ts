@@ -1,4 +1,4 @@
-import type { RuntimeStatus, ToolCallStatus } from "@ai4s/shared";
+import type { RuntimeStatus, ToolCallStatus } from "@boya/shared";
 
 export type { RuntimeStatus, ToolCallStatus };
 

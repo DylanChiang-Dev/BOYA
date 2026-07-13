@@ -353,7 +353,7 @@ mod tests {
 
     #[test]
     fn range_requests_get_206_partial_content() {
-        let root = std::env::temp_dir().join(format!("ai4s-preview-range-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("boya-preview-range-{}", std::process::id()));
         std::fs::create_dir_all(&root).unwrap();
         std::fs::write(root.join("v.mp4"), b"0123456789").unwrap(); // 10 bytes
 
@@ -398,7 +398,7 @@ mod tests {
 
     #[test]
     fn relativize_maps_absolute_workspace_paths_and_rejects_escapes() {
-        let root = std::env::temp_dir().join(format!("ai4s-relativize-test-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("boya-relativize-test-{}", std::process::id()));
         std::fs::create_dir_all(root.join("sub")).unwrap();
         std::fs::write(root.join("sub/index.html"), b"<h1>hi</h1>").unwrap();
 
@@ -419,7 +419,7 @@ mod tests {
     #[test]
     fn relativize_resolves_bare_preview_names_before_building_urls() {
         let root = std::env::temp_dir().join(format!(
-            "ai4s-relativize-bare-test-{}",
+            "boya-relativize-bare-test-{}",
             std::process::id()
         ));
         let nested = root.join("results").join("run-1");
@@ -439,8 +439,8 @@ mod tests {
         // The active workspace moves when the user switches sessions — the
         // server must resolve against the root as it is NOW, not at start-up.
         use std::sync::{Arc, Mutex};
-        let a = std::env::temp_dir().join(format!("ai4s-preview-root-a-{}", std::process::id()));
-        let b = std::env::temp_dir().join(format!("ai4s-preview-root-b-{}", std::process::id()));
+        let a = std::env::temp_dir().join(format!("boya-preview-root-a-{}", std::process::id()));
+        let b = std::env::temp_dir().join(format!("boya-preview-root-b-{}", std::process::id()));
         std::fs::create_dir_all(&a).unwrap();
         std::fs::create_dir_all(&b).unwrap();
         std::fs::write(a.join("f.html"), b"in-a").unwrap();
@@ -479,7 +479,7 @@ mod tests {
         // a previewed HTML file inherit it automatically. Responses carry no
         // Access-Control-Allow-Origin: previews render in <iframe>/<img>, never
         // via cross-origin fetch, so no other origin ever needs to read them.
-        let root = std::env::temp_dir().join(format!("ai4s-preview-token-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("boya-preview-token-{}", std::process::id()));
         std::fs::create_dir_all(&root).unwrap();
         std::fs::write(root.join("f.html"), b"secret").unwrap();
 
@@ -508,7 +508,7 @@ mod tests {
 
     #[test]
     fn serves_files_with_mime_and_blocks_traversal() {
-        let root = std::env::temp_dir().join(format!("ai4s-preview-test-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("boya-preview-test-{}", std::process::id()));
         std::fs::create_dir_all(root.join("sub")).unwrap();
         std::fs::write(root.join("sub/a.pdf"), b"%PDF-1.4 fake").unwrap();
         std::fs::write(root.join("b.html"), b"<h1>hi</h1>").unwrap();

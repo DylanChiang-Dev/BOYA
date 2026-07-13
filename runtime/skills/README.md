@@ -1,6 +1,6 @@
 # runtime/skills
 
-Scientific skills, layered:
+Research skills, layered:
 
 ```text
 skills/
@@ -14,18 +14,18 @@ Core skills are bundled as the `skills-core/` app resource and deployed next to
 the external pack on every sidecar start; directories without a `SKILL.md` are
 skipped.
 
-## Default pack: ai4s-skills (bundled into the installer)
+## Default pack: Boya (bundled into the installer)
 
-The default scientific skills come from
-[ai4s-research/ai4s-skills](https://github.com/ai4s-research/ai4s-skills)
-(research-explorer, literature-survey, experiment-suite, paper-writer,
-integrity-auditor, mindmap-render, ai4s-agent).
+The default workflow skills come from the
+[Boya skill repository](https://github.com/DylanChiang-Dev/boya). The repository
+is the content source of truth; Desktop consumes one pinned commit and does not
+edit the skills locally.
 
 How they ship, end to end:
 
 1. `scripts/dev/fetch-skills.sh` (run locally and in CI) downloads the pack at a
-   pinned commit into `external/ai4s-skills/`.
-2. `tauri.conf.json` bundles that directory as an app resource (`resources/skills/`).
+   pinned commit into `external/boya/` and verifies the exact 15-skill set.
+2. `tauri.conf.json` bundles that directory as `skills-boya/`.
 3. On every sidecar start, `runtime.rs::deploy_bundled_skills` syncs the pack into
    the app-private profile's global skills dir (`<xdg-config>/opencode/skills/`),
    which OpenCode scans regardless of project detection. Bundled skill directories
@@ -33,7 +33,8 @@ How they ship, end to end:
    reserved for user-installed skills. Skill listing must be workspace-scoped
    (`GET /api/skill?directory=…`) — the SDK does this via its `directory` option.
 
-To bump the pack version, update `AI4S_SKILLS_COMMIT` in `fetch-skills.sh`.
+To bump the pack version, update `BOYA_SKILLS_COMMIT` in `fetch-skills.sh` and
+the matching commit in `check-boya-skills.sh`.
 
 ## Office pack: Anthropic document skills (bundled into the installer)
 

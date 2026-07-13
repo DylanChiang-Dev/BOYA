@@ -40,6 +40,8 @@
     "runtime": "Runtime",
     "model": "Model",
     "modelNotSet": "not set",
+    "boyaCloud": "Boya Cloud",
+    "comingSoon": "coming soon",
     "values": {
       "ready": "ready",
       "connecting": "connecting",
@@ -53,8 +55,8 @@
     "noResults": "No results.",
     "actions": {
       "newSession": "New session",
-      "analyzeData": "Analyze my data (new workflow)",
-      "auditReport": "Audit a report (traceability review)",
+      "analyzeData": "Continue with Boya",
+      "auditReport": "Verify a reference list",
       "openNotebooks": "Open notebooks",
       "manageSkills": "Manage skills",
       "openSettings": "Open settings",

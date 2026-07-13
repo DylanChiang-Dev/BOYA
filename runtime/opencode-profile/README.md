@@ -1,6 +1,6 @@
 # runtime/opencode-profile
 
-The AI4S Workbench **OpenCode profile** — the config + skills the app ships and applies
+The Boya Desktop **OpenCode profile** - the config and skills the app ships and applies
 to the bundled OpenCode runtime (not a user's global OpenCode).
 
 The desktop app runs OpenCode with an app-private config/data dir (isolated via
@@ -10,7 +10,7 @@ The desktop app runs OpenCode with an app-private config/data dir (isolated via
 
 ```text
 opencode.json      # base config applied to the bundled runtime (providers, defaults)
-skills/            # AI4S scientific skills (Markdown, agentskills.io format)
+skills/            # Boya research skills (Markdown, agentskills.io format)
 agents/            # optional custom agents
 ```
 
@@ -18,7 +18,7 @@ agents/            # optional custom agents
 
 - The user's provider key (from Settings) is merged into the app-private `opencode.json`
   by the `configure_opencode` Rust command; the sidecar is restarted to pick it up.
-- Skills are NOT shipped from here: the bundled ai4s-skills pack lives in
+- Skills are not shipped from here: the pinned Boya pack and curated utility packs live in
   `runtime/skills/external/` (fetched by `scripts/dev/fetch-skills.sh`) and is
   deployed by `runtime.rs` into this profile's global skills dir
   (`<xdg-config>/opencode/skills/`). They appear on the app's Skills page

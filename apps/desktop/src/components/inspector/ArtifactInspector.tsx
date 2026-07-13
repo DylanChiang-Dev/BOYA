@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Download, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { ArtifactInspector as ArtifactInspectorT, ArtifactTab } from "@ai4s/shared";
+import type { ArtifactInspector as ArtifactInspectorT, ArtifactTab } from "@boya/shared";
 import { useScrollMemory } from "@/lib/scrollMemory";
 import { cn } from "@/lib/cn";
 import { CodeViewer } from "@/components/code-viewer/CodeViewer";

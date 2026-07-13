@@ -26,7 +26,7 @@
   --ok: #4b8b5b;
   --error: #c0564b;
   /* Chart design system (P1-5) — validated categorical hues + chart chrome,
-     the single source of truth shared with @ai4s/shared and the matplotlib
+     the single source of truth shared with @boya/shared and the matplotlib
      style. Light surface = --surface (#ffffff). */
   --series-1: #2a78d6;
   --series-2: #1baf7a;

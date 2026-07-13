@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { PermissionAskedEvent, QuestionAskedEvent } from "@ai4s/sdk";
+import type { PermissionAskedEvent, QuestionAskedEvent } from "@boya/sdk";
 import { InteractionPrompt } from "./InteractionPrompt";
 
 const singleQ: QuestionAskedEvent = {

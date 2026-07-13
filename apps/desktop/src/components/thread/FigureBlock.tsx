@@ -2,7 +2,7 @@ import { useState, type MouseEvent } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { Download } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { FigureAnnotation, FigureBlock as FigureBlockT } from "@ai4s/shared";
+import type { FigureAnnotation, FigureBlock as FigureBlockT } from "@boya/shared";
 import { saveTextWithFeedback } from "@/lib/download";
 
 /**

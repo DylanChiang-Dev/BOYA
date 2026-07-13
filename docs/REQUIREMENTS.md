@@ -532,7 +532,7 @@ competitors.
   every primary action.
 - **Status.** 🟡 One documented chart design system — a validated
   categorical/sequential/status palette as single source of truth in three synced
-  places (`@ai4s/shared` chartPalette, `index.css --series-*`,
+  places (`@boya/shared` chartPalette, `index.css --series-*`,
   `openscience.mplstyle` applied by the `publication-figures` skill) — so agent
   matplotlib and native UI read as one system in light+dark. Command palette
   reaches every primary action; live streaming text + file-path tool rows;

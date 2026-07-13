@@ -11,7 +11,7 @@ A machine may be a plain server (CPU or GPU, no scheduler) or a Slurm cluster.
 
 ## 1 · Pick the machine
 
-1. `cat .openscience/compute.json` in the workspace (the app keeps this file in
+1. `cat .boya/compute.json` in the workspace (the app keeps this file in
    sync from the user's settings — read it directly; the directory is hidden).
    It looks like:
    `{"machines":[{"host":"home-3090","label":"8x3090",
@@ -37,7 +37,7 @@ process, mirroring how the app tracks runs.
 
 1. Pick a job name and build the remote dir path (remember the literal string —
    shell variables do not survive between separate ssh calls):
-   `REMOTE=openscience/jobs/<name>-<YYYYmmdd-HHMMSS>`
+   `REMOTE=boya/jobs/<name>-<YYYYmmdd-HHMMSS>`
 2. Create it and copy inputs (confirm with the user before copying > ~100 MB):
    ```bash
    ssh -o BatchMode=yes <host> "mkdir -p <remote-dir>"
@@ -96,7 +96,7 @@ Use this only when `caps.slurm` is set.
    cluster rejects the default. Load modules (`module load …`) the user names.
 2. Submit:
    ```bash
-   REMOTE=openscience/jobs/<job-name>-$(date +%Y%m%d-%H%M%S)
+   REMOTE=boya/jobs/<job-name>-$(date +%Y%m%d-%H%M%S)
    ssh -o BatchMode=yes <host> "mkdir -p $REMOTE"
    scp -o BatchMode=yes slurm/<job-name>.sbatch <input files> <host>:$REMOTE/
    ssh -o BatchMode=yes <host> "cd $REMOTE && sbatch <job-name>.sbatch"
@@ -154,7 +154,7 @@ python "$XDG_CONFIG_HOME/opencode/skills/remote-compute/record_run.py" \
   --code run.sh --code <each other script> \
   --output "$RESULT"/<each output file> \
   --env-file "$RESULT"/env.txt \
-  --session-id "$(cat .openscience/session.txt 2>/dev/null)"
+  --session-id "$(cat .boya/session.txt 2>/dev/null)"
 ```
 
 The helper warns if a recorded file is missing or if code/outputs are empty —

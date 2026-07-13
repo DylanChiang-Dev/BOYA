@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { ToolUpdatedEvent } from "@ai4s/sdk";
-import type { ArtifactInspector } from "@ai4s/shared";
+import type { ToolUpdatedEvent } from "@boya/sdk";
+import type { ArtifactInspector } from "@boya/shared";
 import {
   artifactBlockToInspector,
   deriveArtifact,

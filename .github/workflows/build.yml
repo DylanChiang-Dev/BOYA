@@ -1,130 +1,76 @@
-name: build
-
-# Builds macOS (.dmg/.app), Windows (NSIS .exe / .msi) and Linux
-# (.deb/.rpm/.AppImage) installers. Each platform's installer can only be
-# produced on its own runner — hence the matrix. On a `v*` tag push the
-# installers are also attached to a draft GitHub Release.
+name: quality-and-build
 
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+  pull_request:
   workflow_dispatch:
 
-# tauri-action needs to create the draft release and upload assets.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: macos-latest
-            target: aarch64-apple-darwin
-          - platform: macos-latest
-            target: x86_64-apple-darwin
-          - platform: windows-latest
-            target: x86_64-pc-windows-msvc
-          - platform: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-    runs-on: ${{ matrix.platform }}
+  quality:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Linux system dependencies
-        if: startsWith(matrix.platform, 'ubuntu')
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl \
-            wget file libxdo-dev libssl-dev libayatana-appindicator3-dev \
-            librsvg2-dev
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4   # version comes from package.json "packageManager"
-
-      - name: Install Node
-        uses: actions/setup-node@v4
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - name: Cache cargo
-        uses: swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri
+      - run: pnpm install --frozen-lockfile
+      - name: Fetch pinned runtime resources
+        run: |
+          bash scripts/dev/fetch-opencode.sh x86_64-unknown-linux-gnu
+          bash scripts/dev/fetch-uv.sh x86_64-unknown-linux-gnu
+          bash scripts/dev/fetch-skills.sh
+          bash scripts/dev/check-boya-skills.sh
+          bash scripts/dev/check-brand-isolation.sh
+      - run: pnpm audit --audit-level high
+      - run: pnpm test
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Fetch bundled OpenCode sidecar
-        shell: bash
-        run: bash scripts/dev/fetch-opencode.sh ${{ matrix.target }}
-
-      - name: Fetch bundled ai4s-skills pack
-        shell: bash
-        run: bash scripts/dev/fetch-skills.sh
-
-      - name: Fetch bundled uv sidecar
-        shell: bash
-        run: bash scripts/dev/fetch-uv.sh ${{ matrix.target }}
-
-      - name: Build the app (Tauri)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  macos-alpha:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
-          projectPath: apps/desktop
-          # Linux: deb+rpm only. AppImage is off because linuxdeploy runs ldd
-          # on every bundled ELF and ldd exits 1 on the Bun-built opencode
-          # sidecar, aborting the whole bundle (tauri-apps/tauri#8929).
-          args: --target ${{ matrix.target }} ${{ startsWith(matrix.platform, 'ubuntu') && '--bundles deb,rpm' || '' }}
-          # On a v* tag push, attach installers to a draft GitHub Release.
-          # Empty tagName (workflow_dispatch) skips release creation.
-          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-          releaseName: ${{ github.ref_type == 'tag' && format('Open Science {0}', github.ref_name) || '' }}
-          releaseDraft: true
-          # Standing install/first-launch notes — every draft is born with these
-          # (the builds are unsigned/un-notarized, so users must clear Gatekeeper /
-          # SmartScreen once). Prepend the per-version changelog before publishing.
-          releaseBody: |
-            ## ⚠️ Install & first launch — unsigned builds
-
-            These installers are **not code-signed or notarized**, so your OS warns on first launch. This is expected; clear it once:
-
-            **macOS** — Apple Silicon: `…_aarch64.dmg` · Intel: `…_x64.dmg` (requires macOS 13+)
-            1. Open the DMG and drag **Open Science** into Applications.
-            2. If you see *"… is damaged and can't be opened"* or *"unidentified developer"*, clear the quarantine attribute in Terminal, then open normally:
-               ```
-               xattr -cr "/Applications/Open Science.app"
-               ```
-
-            **Windows** — `…_x64-setup.exe` or `…_x64_en-US.msi`
-            - SmartScreen shows *"Windows protected your PC"* → **More info** → **Run anyway**.
-
-            **Linux** — `.deb` / `.rpm`
-            - `sudo apt install ./…_amd64.deb`  or  `sudo rpm -i …x86_64.rpm`
-
-            > **No in-app auto-update** — download new versions from this Releases page. (The `.app.tar.gz` assets are build artifacts, not an update channel.)
-
-            ---
-
-            <!-- Prepend this release's changelog above this line before publishing. -->
-
-      - name: Upload installers
-        uses: actions/upload-artifact@v4
+          node-version: 20
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          name: ai4s-workbench-${{ matrix.target }}
+          targets: aarch64-apple-darwin
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+      - run: pnpm install --frozen-lockfile
+      - name: Fetch pinned runtime resources
+        run: |
+          bash scripts/dev/fetch-opencode.sh aarch64-apple-darwin
+          bash scripts/dev/fetch-uv.sh aarch64-apple-darwin
+          bash scripts/dev/fetch-skills.sh
+          bash scripts/dev/check-boya-skills.sh
+      - name: Build unsigned macOS alpha
+        run: pnpm --filter @boya/desktop tauri build --target aarch64-apple-darwin --bundles app,dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: boya-desktop-aarch64-apple-darwin
           path: |
-            apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
-            apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.exe
-            apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.msi
-            apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
-            apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.rpm
-            apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
-          if-no-files-found: warn
+            apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app
+            apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+          if-no-files-found: error

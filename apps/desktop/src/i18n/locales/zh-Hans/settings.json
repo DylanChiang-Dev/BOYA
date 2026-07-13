@@ -9,9 +9,24 @@
   "language": {
     "label": "语言"
   },
+  "about": {
+    "title": "关于",
+    "attribution": "Boya Desktop 基于 Open Science Desktop，并保留原始 MIT 许可证与贡献者历史。",
+    "licenseNotice": "应用内已附原始许可证及第三方声明。",
+    "upstreamSource": "查看上游源代码"
+  },
   "page": {
     "title": "设置",
     "subtitle": "此处的所有设置都配置内置的 OpenCode 运行时——一份配置，无需重复。"
+  },
+  "modelAccess": {
+    "title": "模型访问",
+    "hint": "Boya 将提供统一的研究模型入口，无需手动切换模型",
+    "cloudTitle": "Boya Cloud",
+    "cloudDescription": "提供透明路由与可追溯用量的托管研究模型。",
+    "comingSoon": "即将推出",
+    "developerTitle": "开发者 BYOK",
+    "developerDescription": "使用自己的模型服务凭证进行开发与本地测试。"
   },
   "runtime": {
     "title": "代理运行时",

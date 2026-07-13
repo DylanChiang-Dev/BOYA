@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { seriesColor, CHART_PALETTE_LIGHT, CHART_PALETTE_DARK } from "@ai4s/shared";
+import { seriesColor, CHART_PALETTE_LIGHT, CHART_PALETTE_DARK } from "@boya/shared";
 
 // The palette is the single source of truth shared with index.css --series-*
-// and runtime/.../openscience.mplstyle. Lock the hexes so those three stay in sync.
+// and runtime/.../boya.mplstyle. Lock the hexes so those three stay in sync.
 describe("chart palette (single source of truth)", () => {
   it("assigns categorical hues in fixed order and wraps only past 8", () => {
     expect(CHART_PALETTE_LIGHT.categorical).toEqual([

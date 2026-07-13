@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Record a remote (SSH/HPC/Modal) experiment run into the Open Science provenance.
+"""Record a remote (SSH/HPC/Modal) experiment run into the Boya provenance.
 
 Remote runs execute off the laptop, so the app can't capture their environment,
 hardware, or outputs. This helper — called by the remote-compute / modal-run skills
 AFTER a job completes and its results are fetched — appends an accurate run
-record to <workspace>/.openscience/remote-runs.jsonl, which the app merges into
+record to <workspace>/.boya/remote-runs.jsonl, which the app merges into
 the Runs view. It owns the record schema so the agent never hand-writes JSON.
 
 Record EVERYTHING the run touched, not a sample: pass every script that ran as a
@@ -31,8 +31,8 @@ import os
 import sys
 import time
 
-STORE = os.path.join(".openscience", "remote-runs.jsonl")
-ENV_DIR = os.path.join(".openscience", "env")  # package lockfiles, content-addressed
+STORE = os.path.join(".boya", "remote-runs.jsonl")
+ENV_DIR = os.path.join(".boya", "env")  # package lockfiles, content-addressed
 HASH_CAP = 5_000_000  # bytes; larger files are recorded by size only
 FREEZE_MARKER = "--- pip freeze ---"
 
@@ -69,7 +69,7 @@ def read_env(path):
         numpy==2.4.4
         scipy==1.17.1
     The full freeze is stored as a content-addressed lockfile under
-    .openscience/env/<hash>.txt (mirroring how the app records local runs), and
+    .boya/env/<hash>.txt (mirroring how the app records local runs), and
     `packages` points at it. Returns None if the file is missing/empty.
     """
     try:
@@ -97,7 +97,7 @@ def read_env(path):
     env: dict[str, object] = {
         "platform": platform or "unknown",
         # Which app version recorded this; injected into the sidecar's env.
-        "app": os.environ.get("OPENSCIENCE_APP_VERSION", "unknown"),
+        "app": os.environ.get("BOYA_APP_VERSION", "unknown"),
     }
     if python:
         env["python"] = python
@@ -155,7 +155,7 @@ def reject_reused_output_paths(record):
 
 
 def main():
-    p = argparse.ArgumentParser(description="Record a remote run into Open Science provenance.")
+    p = argparse.ArgumentParser(description="Record a remote run into Boya provenance.")
     p.add_argument("--command", required=True, help="the submit command, e.g. 'sbatch train.slurm'")
     p.add_argument("--surface", required=True, choices=["hpc", "modal", "ssh"], help="compute surface")
     p.add_argument("--status", default="ok", choices=["ok", "failed"], help="terminal outcome")
@@ -173,7 +173,7 @@ def main():
     p.add_argument("--session-id", dest="session_id", help="originating conversation id")
     args = p.parse_args()
 
-    # The skill passes `--session-id "$(cat .openscience/session.txt)"`, which is
+    # The skill passes `--session-id "$(cat .boya/session.txt)"`, which is
     # empty when the marker is absent — treat that as "no session".
     if args.session_id is not None and not args.session_id.strip():
         args.session_id = None

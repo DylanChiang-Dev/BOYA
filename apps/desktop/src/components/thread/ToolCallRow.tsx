@@ -1,6 +1,6 @@
 import { AlertTriangle, Check, Clock, Loader2, ShieldQuestion, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { ToolCallBlock, ToolCallStatus } from "@ai4s/shared";
+import type { ToolCallBlock, ToolCallStatus } from "@boya/shared";
 import { cn } from "@/lib/cn";
 
 // Icon + tone per status. The aria-label text is looked up from

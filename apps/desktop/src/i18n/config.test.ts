@@ -8,10 +8,8 @@ import {
 } from "./config";
 
 describe("locale registry", () => {
-  it("ships exactly the 7 first-batch locales, in order", () => {
-    expect(shippedLocales().map((l) => l.code)).toEqual([
-      "en", "zh-Hans", "ja", "es", "de", "fr", "ko",
-    ]);
+  it("ships exactly the four Boya locales, in order", () => {
+    expect(shippedLocales().map((l) => l.code)).toEqual(["zh-Hant", "zh-Hans", "en", "ja"]);
   });
 
   it("registers pt-BR and ar but does not ship them", () => {
@@ -41,7 +39,8 @@ describe("resolveLocale", () => {
   it("falls back to a base-language match", () => {
     expect(resolveLocale("en-GB")).toBe("en");
     expect(resolveLocale("zh-CN")).toBe("zh-Hans");
-    expect(resolveLocale("fr-CA")).toBe("fr");
+    expect(resolveLocale("zh-TW")).toBe("zh-Hant");
+    expect(resolveLocale("fr-CA")).toBe(DEFAULT_LOCALE);
   });
 
   it("never resolves to an unshipped locale", () => {

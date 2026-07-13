@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { OpenCodeEvent, HistoryMessage } from "@ai4s/sdk";
+import type { OpenCodeEvent, HistoryMessage } from "@boya/sdk";
 import {
   datedWorkspaceName,
   foldCarriageReturns,
@@ -19,12 +19,12 @@ const foldAll = (events: OpenCodeEvent[], from: FoldState = empty): FoldState =>
 
 describe("tidyToolTitle", () => {
   it("shows workspace files by their relative path", () => {
-    expect(tidyToolTitle("/Users/asq/Documents/OpenScience/demo/analyze.py")).toBe("demo/analyze.py");
-    expect(tidyToolTitle("mkdir -p /Users/asq/Documents/OpenScience/demo_analysis")).toBe(
+    expect(tidyToolTitle("/Users/asq/Documents/Boya/demo/analyze.py")).toBe("demo/analyze.py");
+    expect(tidyToolTitle("mkdir -p /Users/asq/Documents/Boya/demo_analysis")).toBe(
       "mkdir -p demo_analysis",
     );
     // OpenCode's write-tool titles drop the leading slash — must still relativize.
-    expect(tidyToolTitle("Users/asq/Documents/OpenScience/demo_analysis/analyze.py")).toBe(
+    expect(tidyToolTitle("Users/asq/Documents/Boya/demo_analysis/analyze.py")).toBe(
       "demo_analysis/analyze.py",
     );
   });
@@ -68,7 +68,7 @@ describe("toolPresentation", () => {
   });
   it("file tools: verb + relative path", () => {
     expect(
-      toolPresentation("write", "", { filePath: "/Users/asq/Documents/OpenScience/demo/train.py" }),
+      toolPresentation("write", "", { filePath: "/Users/asq/Documents/Boya/demo/train.py" }),
     ).toEqual({ verb: "Created", title: "demo/train.py" });
     expect(toolPresentation("edit", "", { filePath: "config.yaml" })).toEqual({
       verb: "Edited",
@@ -140,7 +140,7 @@ describe("foldEvent", () => {
     // OpenCode only sets a write/edit tool's title on completion — while the
     // tool runs, the file path in its input is the only thing worth showing.
     const s = foldAll([
-      { type: "tool.updated", sessionId: S, callId: "c1", tool: "write", status: "running", input: { filePath: "/Users/asq/Documents/OpenScience/2026-07-04/index.html", content: "<!doctype html>" } },
+      { type: "tool.updated", sessionId: S, callId: "c1", tool: "write", status: "running", input: { filePath: "/Users/asq/Documents/Boya/2026-07-04/index.html", content: "<!doctype html>" } },
     ]);
     expect(s.blocks[0]).toMatchObject({
       kind: "tool-call",

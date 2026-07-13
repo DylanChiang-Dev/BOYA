@@ -9,9 +9,24 @@
   "language": {
     "label": "言語"
   },
+  "about": {
+    "title": "このアプリについて",
+    "attribution": "Boya Desktop は Open Science Desktop を基盤とし、元の MIT ライセンスと貢献者の履歴を保持しています。",
+    "licenseNotice": "元のライセンスとサードパーティー通知はアプリに同梱されています。",
+    "upstreamSource": "上流のソースを見る"
+  },
   "page": {
     "title": "設定",
     "subtitle": "ここでの設定はすべて、バンドルされた OpenCode ランタイムに対するものです — 設定は一つだけで、コピーはありません。"
+  },
+  "modelAccess": {
+    "title": "モデルアクセス",
+    "hint": "Boya は手動のモデル切り替えが不要な統一研究モデル入口を提供します",
+    "cloudTitle": "Boya Cloud",
+    "cloudDescription": "透明なルーティングと追跡可能な使用量を備えたマネージド研究モデル。",
+    "comingSoon": "近日公開",
+    "developerTitle": "開発者 BYOK",
+    "developerDescription": "独自のプロバイダー認証情報を使って開発とローカルテストを行います。"
   },
   "runtime": {
     "title": "エージェントランタイム",

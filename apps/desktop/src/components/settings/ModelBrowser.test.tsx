@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProviderInfo } from "@ai4s/sdk";
+import type { ProviderInfo } from "@boya/sdk";
 import { loadModelPreferences } from "./modelPreferences";
 import { ModelBrowser } from "./ModelBrowser";
 

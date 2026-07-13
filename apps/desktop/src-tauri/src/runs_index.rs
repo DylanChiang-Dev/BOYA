@@ -79,7 +79,7 @@ pub struct Cursor {
 }
 
 fn db_path(root: &Path) -> PathBuf {
-    root.join(".openscience").join(DB_FILE)
+    root.join(".boya").join(DB_FILE)
 }
 
 /// Open (creating if needed) the per-workspace index, ensuring the schema. A
@@ -141,7 +141,7 @@ fn get_wm(conn: &Connection, key: &str) -> i64 {
         .unwrap_or(0)
 }
 
-/// Every runs log under the base folder: the base's own `.openscience/` plus
+/// Every runs log under the base folder: the base's own `.boya/` plus
 /// each session subfolder's. This is what makes the index GLOBAL — one DB over
 /// all sessions, with per-session views being just a `session_id` filter.
 fn source_files(base: &Path) -> Vec<PathBuf> {
@@ -150,14 +150,14 @@ fn source_files(base: &Path) -> Vec<PathBuf> {
         for e in entries.flatten() {
             let name = e.file_name();
             // Session folders are immediate children; skip hidden dirs (our own
-            // .openscience store lives there) and files.
+            // .boya store lives there) and files.
             if e.path().is_dir() && !name.to_string_lossy().starts_with('.') {
                 dirs.push(e.path());
             }
         }
     }
     dirs.into_iter()
-        .flat_map(|d| [RUNS_FILE, REMOTE_RUNS_FILE].map(|f| d.join(".openscience").join(f)))
+        .flat_map(|d| [RUNS_FILE, REMOTE_RUNS_FILE].map(|f| d.join(".boya").join(f)))
         .collect()
 }
 
@@ -386,9 +386,9 @@ mod tests {
     use super::*;
 
     fn temp_root(tag: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("ai4s-runidx-{tag}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("boya-runidx-{tag}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(dir.join(".openscience")).unwrap();
+        std::fs::create_dir_all(dir.join(".boya")).unwrap();
         dir
     }
 
@@ -397,7 +397,7 @@ mod tests {
         let mut f = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
-            .open(root.join(".openscience").join(file))
+            .open(root.join(".boya").join(file))
             .unwrap();
         for l in lines {
             writeln!(f, "{l}").unwrap();
@@ -440,7 +440,7 @@ mod tests {
         write_log(&root, REMOTE_RUNS_FILE, &[&rec("remote1", 250, "ok", Some("hpc"), "sbatch j.slurm")]);
         // A partial (newline-less) line mid-flight must NOT be ingested yet.
         use std::io::Write;
-        let mut f = std::fs::OpenOptions::new().append(true).open(root.join(".openscience").join(RUNS_FILE)).unwrap();
+        let mut f = std::fs::OpenOptions::new().append(true).open(root.join(".boya").join(RUNS_FILE)).unwrap();
         write!(f, "{}", rec("partial", 400, "ok", None, "python c.py")).unwrap(); // no trailing \n
 
         let conn = open_index(&root).unwrap();
@@ -508,7 +508,7 @@ mod tests {
         let root = temp_root("global");
         // Two sessions, each with its own dated folder + logs (like real workspaces).
         for (sess, ts) in [("ses_a", 100), ("ses_b", 200)] {
-            let dir = root.join(sess).join(".openscience");
+            let dir = root.join(sess).join(".boya");
             std::fs::create_dir_all(&dir).unwrap();
             let line = format!(
                 r#"{{"runId":"run_{sess}","ts":{ts},"status":"ok","command":"python x.py","sessionId":"{sess}","code":[],"outputs":[]}}"#

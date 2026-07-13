@@ -317,7 +317,7 @@ export async function setWorkspace(path: string): Promise<string> {
 }
 
 /** Record which session owns the active workspace (written to
- *  `.openscience/session.txt`) so skill helpers can attribute remote runs. */
+ *  `.boya/session.txt`) so skill helpers can attribute remote runs. */
 export async function markSession(sessionId: string): Promise<void> {
   if (!isTauri) return;
   const { invoke } = await import("@tauri-apps/api/core");
@@ -340,7 +340,7 @@ export async function newDatedWorkspace(name: string): Promise<string> {
 }
 
 /** A project: a named workspace folder under the base dir, marked by its
- *  `.openscience/project.json`. Sessions group under it by `directory`. */
+ *  `.boya/project.json`. Sessions group under it by `directory`. */
 export interface ProjectInfo {
   id: string;
   name: string;

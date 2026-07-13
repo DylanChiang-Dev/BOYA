@@ -65,7 +65,7 @@ vi.mock("./tauri", () => ({
   runtimePassword: async () => "pw-test",
 }));
 vi.mock("./kernel", () => ({ kernelReset: mocks.kernelReset }));
-vi.mock("@ai4s/sdk", () => {
+vi.mock("@boya/sdk", () => {
   class OpenCodeClient {
     private statusCb: (s: string) => void = () => {};
     constructor(opts: Record<string, unknown>) {
@@ -174,7 +174,7 @@ vi.mock("@ai4s/sdk", () => {
   return { OpenCodeClient, DEFAULT_OPENCODE_URL: "http://127.0.0.1:4096" };
 });
 
-import type { ArtifactBlock } from "@ai4s/shared";
+import type { ArtifactBlock } from "@boya/shared";
 import { DRAFT_KEY, rootSessionOf, useRuntimeStore } from "./runtime";
 
 beforeEach(async () => {

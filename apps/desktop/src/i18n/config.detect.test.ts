@@ -35,13 +35,13 @@ describe("detectInitialLocale", () => {
     expect(detectInitialLocale()).toBe("ja");
   });
 
-  it("falls back through navigator.language when nothing is stored", () => {
+  it("uses the Traditional Chinese default when the browser locale is hidden", () => {
     restoreFns.push(mockStorage(null), mockNavigatorLanguage("fr-CA"));
-    expect(detectInitialLocale()).toBe("fr");
+    expect(detectInitialLocale()).toBe("zh-Hant");
   });
 
-  it("returns en when neither storage nor navigator yields a shipped locale", () => {
+  it("uses Traditional Chinese when neither storage nor navigator yields a shipped locale", () => {
     restoreFns.push(mockStorage(null), mockNavigatorLanguage("xx-YY"));
-    expect(detectInitialLocale()).toBe("en");
+    expect(detectInitialLocale()).toBe("zh-Hant");
   });
 });

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { ThreadBlock, ToolCallBlock } from "@ai4s/shared";
+import type { ThreadBlock, ToolCallBlock } from "@boya/shared";
 import { ToolGroup, groupToolBlocks, summarizeGroup } from "./ToolGroup";
 
 const tool = (over: Partial<ToolCallBlock>): ToolCallBlock => ({

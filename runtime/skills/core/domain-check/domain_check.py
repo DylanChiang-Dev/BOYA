@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Open Science — domain-correctness gates (P0-5).
+"""Boya — domain-correctness gates (P0-5).
 
 A deterministic, pluggable validator layer: one rule set per scientific field
 that intercepts that field's classic error classes — code that *runs* but is
@@ -683,7 +683,7 @@ def analyze(ctx: Ctx) -> list[Finding]:
 
 
 def discover(root: Path) -> list[Path]:
-    skip = {"node_modules", "__pycache__", ".git", ".openscience", ".venv", "venv"}
+    skip = {"node_modules", "__pycache__", ".git", ".boya", ".venv", "venv"}
     out: list[Path] = []
     for p in sorted(root.rglob("*")):
         if any(part in skip or part.startswith(".") for part in p.parts):

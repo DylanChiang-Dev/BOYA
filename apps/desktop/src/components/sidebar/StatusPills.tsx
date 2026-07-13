@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
-import type { ModelStatus, RuntimeStatus } from "@ai4s/shared";
+import type { ModelStatus, RuntimeStatus } from "@boya/shared";
 import { useRuntimeStore } from "@/lib/runtime";
+import { useUiStore } from "@/lib/store";
 import { cn } from "@/lib/cn";
 
 const RUNTIME_TONE: Record<RuntimeStatus, string> = {
@@ -21,7 +22,9 @@ export function StatusPills() {
   // Both live from the runtime: connection status + the configured default model.
   const runtime = useRuntimeStore((s) => s.status);
   const defaultModel = useRuntimeStore((s) => s.defaultModel);
-  const model: ModelStatus = defaultModel ? "connected" : "disconnected";
+  const modelAccessMode = useUiStore((s) => s.modelAccessMode);
+  const developerMode = modelAccessMode === "developer-byok";
+  const model: ModelStatus = developerMode && defaultModel ? "connected" : "disconnected";
 
   return (
     <div className="flex flex-col gap-1 text-xs text-muted">
@@ -32,8 +35,14 @@ export function StatusPills() {
       />
       <Pill
         dot={MODEL_TONE[model]}
-        label={t("status.model")}
-        value={defaultModel ? defaultModel.split("/").pop()! : t("status.modelNotSet")}
+        label={developerMode ? t("status.model") : t("status.boyaCloud")}
+        value={
+          developerMode
+            ? defaultModel
+              ? defaultModel.split("/").pop()!
+              : t("status.modelNotSet")
+            : t("status.comingSoon")
+        }
       />
     </div>
   );

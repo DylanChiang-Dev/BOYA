@@ -1,14 +1,14 @@
-// Curated open-source science MCP connectors (P1-2). These are existing,
+// Curated open-source research MCP connectors. These are existing,
 // maintained open-source MCP servers — we one-click provision them into a
 // shared isolated env (bundled uv) and register them; we do not reimplement
 // literature/database access ourselves. Keep this list small and vetted.
-import type { McpConfig } from "@ai4s/sdk";
+import type { McpConfig } from "@boya/sdk";
 
 export interface ScienceConnector {
   /** MCP server name written into OpenCode's config. */
   id: string;
   label: string;
-  /** Short discipline chip, e.g. "materials", "economics". */
+  /** Short discipline chip, e.g. "all fields", "economics". */
   discipline: string;
   description: string;
   /** PyPI package installed into the shared science-MCP env. */
@@ -41,29 +41,6 @@ export const SCIENCE_CONNECTORS: ScienceConnector[] = [
     source: "github.com/openags/paper-search-mcp",
   },
   {
-    id: "biomcp",
-    label: "Biomedical databases",
-    discipline: "biology",
-    description: "PubMed articles, ClinicalTrials.gov, and genomic variants (MyVariant/ClinVar)",
-    pkg: "biomcp-python",
-    module: "biomcp",
-    args: ["run"],
-    source: "github.com/genomoncology/biomcp",
-  },
-  {
-    id: "materials-project",
-    label: "Materials Project",
-    discipline: "materials",
-    description:
-      "Query material properties, crystal structures, and phase diagrams from the Materials Project database",
-    pkg: "mcp-materials-project",
-    bin: "mcp-materials-project",
-    apiKeyEnv: "MP_API_KEY",
-    apiKeyUrl: "https://next-gen.materialsproject.org/api",
-    installNote: "large — installs pymatgen + mp-api on first enable",
-    source: "github.com/luffysolution-svg/mcp-materials-project",
-  },
-  {
     id: "fred",
     label: "FRED economic data",
     discipline: "economics",
@@ -74,36 +51,6 @@ export const SCIENCE_CONNECTORS: ScienceConnector[] = [
     apiKeyEnv: "FRED_API_KEY",
     apiKeyUrl: "https://fred.stlouisfed.org/docs/api/api_key.html",
     source: "github.com/tosin2013/fred-mcp",
-  },
-  {
-    id: "spaceweather",
-    label: "Space weather",
-    discipline: "physics",
-    description:
-      "Solar wind, solar flares, Kp/Dst geomagnetic indices, radiation storms, and aurora forecasts (NOAA SWPC · NASA DONKI · USGS)",
-    pkg: "spaceweather-mcp",
-    bin: "spaceweather-mcp",
-    source: "github.com/hoon1983/spaceweather-mcp",
-  },
-  {
-    id: "open-meteo",
-    label: "Weather & climate (Open-Meteo)",
-    discipline: "earth/climate",
-    description:
-      "Current & historical weather, air quality, and timezones from Open-Meteo — free, no key",
-    pkg: "mcp-weather-server",
-    module: "mcp_weather_server",
-    source: "github.com/isdaniel/mcp_weather_server",
-  },
-  {
-    id: "usgs-water",
-    label: "USGS water data",
-    discipline: "earth/climate",
-    description:
-      "USGS Water Services — streamflow, flood stages, peak events, and monitoring sites across the US",
-    pkg: "usgs-mcp",
-    bin: "usgs-mcp",
-    source: "github.com/mansurjisan/ocean-mcp",
   },
 ];
 

@@ -1,5 +1,5 @@
 // Artifact provenance (P0-3): every agent write of a workspace file appends a
-// version record to <workspace>/.openscience/provenance.jsonl — append-only,
+// version record to <workspace>/.boya/provenance.jsonl — append-only,
 // one JSON object per line, so any artifact can reveal its generating code,
 // environment, and originating conversation, per version.
 use std::path::{Component, Path, PathBuf};
@@ -9,7 +9,7 @@ use tauri::AppHandle;
 
 use crate::runtime::workspace_dir;
 
-const STORE_DIR: &str = ".openscience";
+const STORE_DIR: &str = ".boya";
 const STORE_FILE: &str = "provenance.jsonl";
 /// Per-record content cap: keeps the store bounded; larger writes are truncated.
 const CONTENT_CAP: usize = 100_000;
@@ -62,7 +62,7 @@ pub struct EnvInfo {
     pub python: Option<String>,
     /// OS and architecture, e.g. "macos-aarch64".
     pub platform: String,
-    /// Open Science app version that recorded this.
+    /// Boya app version that recorded this.
     pub app: String,
     /// Installed Python packages (pip freeze), content-addressed to a lockfile.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -94,14 +94,14 @@ pub struct HardwareInfo {
 
 /// A snapshot of the installed Python packages at record time. The full
 /// `name==version` list is stored once, content-addressed, at
-/// `.openscience/env/<hash>.txt`; records carry only the count + hash so the
+/// `.boya/env/<hash>.txt`; records carry only the count + hash so the
 /// store stays small and identical environments dedupe to one lockfile.
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PackageSnapshot {
     /// Number of installed packages captured.
     pub count: u32,
-    /// Short content hash; the lockfile is `.openscience/env/<hash>.txt`.
+    /// Short content hash; the lockfile is `.boya/env/<hash>.txt`.
     pub hash: String,
 }
 
@@ -470,7 +470,7 @@ pub fn list_provenance(app: AppHandle, path: String) -> Result<Vec<ProvenanceRec
     versions_for(&workspace_dir(&app)?, &path)
 }
 
-/// Read a content-addressed package lockfile (`.openscience/env/<hash>.txt`).
+/// Read a content-addressed package lockfile (`.boya/env/<hash>.txt`).
 /// `hash` is validated to hex so it cannot escape the env directory.
 #[tauri::command]
 pub fn read_env_lockfile(app: AppHandle, hash: String) -> Result<String, String> {
@@ -489,7 +489,7 @@ mod tests {
     use super::{append_record, cap_content, normalize_rel, versions_for, CONTENT_CAP};
 
     fn temp_root(tag: &str) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("ai4s-prov-{tag}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("boya-prov-{tag}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir
@@ -558,7 +558,7 @@ mod tests {
         // Blank lines are not counted as packages.
         assert_eq!(s1.count, 3);
         assert_eq!(s1.hash, content_hash(freeze)); // deterministic addressing
-        let lock = root.join(".openscience/env").join(format!("{}.txt", s1.hash));
+        let lock = root.join(".boya/env").join(format!("{}.txt", s1.hash));
         assert_eq!(std::fs::read_to_string(&lock).unwrap(), freeze);
 
         // Same environment -> same hash, no duplicate file rewrite.
@@ -595,7 +595,7 @@ mod tests {
         append_record(&root, "x.py", "write", None, None, None, None, None, None, None).unwrap();
         // A corrupt line must not lose the rest of the history.
         use std::io::Write;
-        let file = root.join(".openscience/provenance.jsonl");
+        let file = root.join(".boya/provenance.jsonl");
         let mut f = std::fs::OpenOptions::new().append(true).open(&file).unwrap();
         writeln!(f, "not json").unwrap();
         append_record(&root, "x.py", "write", None, None, None, None, None, None, None).unwrap();

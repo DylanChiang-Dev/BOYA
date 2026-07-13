@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Bot, Boxes, Check, Package, Puzzle, X } from "lucide-react";
+import { Boxes, Check, Package, Puzzle, X } from "lucide-react";
 import { useRuntimeStore } from "@/lib/runtime";
 import { cn } from "@/lib/cn";
 
 /**
- * Skills, agents, install-a-skill, and detected scientific environment — all real:
- * skills/agents from the OpenCode runtime, environment from the host system.
+ * Skills, install-a-skill, and the detected local environment. Skill data
+ * comes from OpenCode; environment data comes from the host system.
  */
 export function SkillsPage() {
   const { t } = useTranslation(["pages", "common"]);
   const navigate = useNavigate();
-  const { skills, agents, tools, status, loadCatalog, detectTools, installSkill } = useRuntimeStore();
+  const { skills, tools, status, loadCatalog, detectTools, installSkill } = useRuntimeStore();
   const connected = status === "ready";
+  const { boyaSkills, utilitySkills } = classifySkills(skills);
   const [text, setText] = useState("");
   const [installing, setInstalling] = useState(false);
 
@@ -86,17 +87,24 @@ export function SkillsPage() {
 
         {connected ? (
           <>
-            <Section title={t("skills.agentsSection.sectionTitle", { count: agents.length })} icon={<Bot size={15} />}>
-              {agents.length === 0 && <Empty>{t("skills.agentsSection.empty")}</Empty>}
-              {agents.map((a) => {
-                const mode = modeOf(a.mode);
-                const modeLabel = mode ? t(`skills.agentsSection.agentMode.${mode}`) : a.mode;
-                return <RowItem key={a.name} name={a.name} desc={a.description} tag={modeLabel} />;
+            <Section title={t("skills.boyaSection", { count: boyaSkills.length })} icon={<Puzzle size={15} />}>
+              {boyaSkills.length === 0 && <Empty>{t("skills.boyaMissing")}</Empty>}
+              {boyaSkills.map((s) => {
+                const source = sourceOf(s.location);
+                const sourceLabel =
+                  source === "builtin"
+                    ? t("skills.skillsListSection.source.builtin")
+                    : source === "project"
+                      ? t("skills.skillsListSection.source.project")
+                      : source === "user"
+                        ? t("skills.skillsListSection.source.user")
+                        : undefined;
+                return <RowItem key={s.name} name={s.name} desc={s.description} tag={sourceLabel} />;
               })}
             </Section>
-            <Section title={t("skills.skillsListSection.sectionTitle", { count: skills.length })} icon={<Puzzle size={15} />}>
-              {skills.length === 0 && <Empty>{t("skills.skillsListSection.empty")}</Empty>}
-              {skills.map((s) => {
+            <Section title={t("skills.utilitySection", { count: utilitySkills.length })} icon={<Package size={15} />}>
+              {utilitySkills.length === 0 && <Empty>{t("skills.skillsListSection.empty")}</Empty>}
+              {utilitySkills.map((s) => {
                 const source = sourceOf(s.location);
                 const sourceLabel =
                   source === "builtin"
@@ -129,14 +137,29 @@ function sourceOf(location?: string): SkillSource | undefined {
   return "user";
 }
 
-// AgentInfo.mode is typed `string` (external SDK), but OpenCode only ever
-// emits "primary" | "subagent" | "all" — see useRuntimeStore's a.mode ===
-// "primary" check. Narrow to the known set so we can translate it; unknown
-// values (future SDK additions) fall back to the raw string at the call site.
-type AgentMode = "primary" | "subagent" | "all";
+export const BOYA_SKILL_IDS = new Set([
+  "boya",
+  "research-question",
+  "literature-search",
+  "reference-check",
+  "literature-analysis",
+  "theoretical-framework",
+  "research-design",
+  "paper-outline",
+  "academic-revision",
+  "manuscript-review",
+  "thesis-defense-prep",
+  "journal-fit",
+  "citation-format",
+  "bilingual-abstract",
+  "ai-use-disclosure",
+]);
 
-function modeOf(mode?: string): AgentMode | undefined {
-  return mode === "primary" || mode === "subagent" || mode === "all" ? mode : undefined;
+export function classifySkills<T extends { name: string }>(skills: T[]) {
+  return {
+    boyaSkills: skills.filter((skill) => BOYA_SKILL_IDS.has(skill.name)),
+    utilitySkills: skills.filter((skill) => !BOYA_SKILL_IDS.has(skill.name)),
+  };
 }
 
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {

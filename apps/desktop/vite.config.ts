@@ -14,9 +14,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": r("./src"),
-      "@ai4s/shared": r("../../packages/shared/src/index.ts"),
-      "@ai4s/sdk/mock-server": r("../../packages/sdk/src/mockServer.ts"),
-      "@ai4s/sdk": r("../../packages/sdk/src/index.ts"),
+      "@boya/shared": r("../../packages/shared/src/index.ts"),
+      "@boya/sdk/mock-server": r("../../packages/sdk/src/mockServer.ts"),
+      "@boya/sdk": r("../../packages/sdk/src/index.ts"),
     },
   },
   test: {

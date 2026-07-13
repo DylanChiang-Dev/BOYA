@@ -1,12 +1,13 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProviderInfo } from "@ai4s/sdk";
+import type { ProviderInfo } from "@boya/sdk";
 import i18n from "@/i18n";
 import * as runtime from "@/lib/runtime";
 import { useRuntimeStore } from "@/lib/runtime";
 import { useSetupStore } from "@/lib/setup";
 import { useToastStore } from "@/lib/toast";
+import { useUiStore } from "@/lib/store";
 import { loadModelPreferences, saveModelPreferences } from "@/components/settings/modelPreferences";
 import { Toaster } from "@/components/ui/Toaster";
 import { SettingsPage } from "./SettingsPage";
@@ -57,6 +58,7 @@ describe("Settings model browser integration", () => {
     useToastStore.setState({ toasts: [] });
     useSetupStore.setState({ generation: 0 });
     useRuntimeStore.setState({ status: "ready", defaultModel: "openai/gpt-5.2", switching: false });
+    useUiStore.setState({ modelAccessMode: "developer-byok" });
     await i18n.changeLanguage("en");
   });
 
@@ -67,6 +69,7 @@ describe("Settings model browser integration", () => {
     useToastStore.setState({ toasts: [] });
     useSetupStore.setState(initialSetup, true);
     useRuntimeStore.setState(initialRuntime, true);
+    useUiStore.setState({ modelAccessMode: "boya-cloud" });
   });
 
   it("shows the connect prompt when the runtime errors before any model switch happened", async () => {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Code2, Eye, ExternalLink, FileSearch, History, Loader2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { FilePreviewInspector as FilePreviewInspectorT, FileRoot } from "@ai4s/shared";
+import type { FilePreviewInspector as FilePreviewInspectorT, FileRoot } from "@boya/shared";
 import { previewKindForName, type PreviewKind } from "@/lib/artifacts";
 import {
   base64ToBytes,

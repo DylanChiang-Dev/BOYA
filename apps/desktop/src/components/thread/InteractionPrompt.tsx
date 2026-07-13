@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, HelpCircle, ShieldQuestion } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { PermissionAskedEvent, PermissionReply, QuestionAskedEvent } from "@ai4s/sdk";
+import type { PermissionAskedEvent, PermissionReply, QuestionAskedEvent } from "@boya/sdk";
 import { cn } from "@/lib/cn";
 
 /**

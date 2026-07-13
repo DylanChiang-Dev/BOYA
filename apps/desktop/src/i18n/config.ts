@@ -12,20 +12,21 @@ export interface LocaleMeta {
   shipped: boolean;
 }
 
-export const DEFAULT_LOCALE = "en";
+export const DEFAULT_LOCALE = "zh-Hant";
 
 /** localStorage key holding the user's chosen locale. */
-export const LOCALE_KEY = "ai4s.locale";
+export const LOCALE_KEY = "boya.locale";
 
 /** Registration order is the switcher's display order. */
 export const LOCALES: LocaleMeta[] = [
-  { code: "en", label: "English", nativeName: "English", dir: "ltr", shipped: true },
+  { code: "zh-Hant", label: "Traditional Chinese", nativeName: "繁體中文", dir: "ltr", shipped: true },
   { code: "zh-Hans", label: "Simplified Chinese", nativeName: "简体中文", dir: "ltr", shipped: true },
+  { code: "en", label: "English", nativeName: "English", dir: "ltr", shipped: true },
   { code: "ja", label: "Japanese", nativeName: "日本語", dir: "ltr", shipped: true },
-  { code: "es", label: "Spanish", nativeName: "Español", dir: "ltr", shipped: true },
-  { code: "de", label: "German", nativeName: "Deutsch", dir: "ltr", shipped: true },
-  { code: "fr", label: "French", nativeName: "Français", dir: "ltr", shipped: true },
-  { code: "ko", label: "Korean", nativeName: "한국어", dir: "ltr", shipped: true },
+  { code: "es", label: "Spanish", nativeName: "Español", dir: "ltr", shipped: false },
+  { code: "de", label: "German", nativeName: "Deutsch", dir: "ltr", shipped: false },
+  { code: "fr", label: "French", nativeName: "Français", dir: "ltr", shipped: false },
+  { code: "ko", label: "Korean", nativeName: "한국어", dir: "ltr", shipped: false },
   { code: "pt-BR", label: "Portuguese (Brazil)", nativeName: "Português (Brasil)", dir: "ltr", shipped: false },
   { code: "ar", label: "Arabic", nativeName: "العربية", dir: "rtl", shipped: false },
 ];
@@ -48,6 +49,9 @@ export function resolveLocale(candidate: string | null | undefined): string {
   const exact = shipped.find((l) => l.code.toLowerCase() === want);
   if (exact) return exact.code;
   const base = want.split("-")[0];
+  if (base === "zh") {
+    return /(?:^|-)(hant|tw|hk|mo)(?:-|$)/.test(want) ? "zh-Hant" : "zh-Hans";
+  }
   const byBase = shipped.find((l) => l.code.toLowerCase().split("-")[0] === base);
   return byBase ? byBase.code : DEFAULT_LOCALE;
 }

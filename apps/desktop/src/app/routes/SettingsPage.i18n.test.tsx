@@ -30,13 +30,16 @@ describe("Settings page strings (i18n)", () => {
       screen.getByText("Everything here configures the bundled OpenCode runtime — one config, no copies."),
     ).toBeInTheDocument();
     expect(screen.getByText("Agent runtime")).toBeInTheDocument();
+    expect(screen.getAllByText("Boya Cloud")).toHaveLength(2);
     expect(screen.getByText("MCP servers")).toBeInTheDocument();
     expect(screen.getByText("Workspace")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "About" })).toBeInTheDocument();
+    expect(screen.getByText(/based on Open Science Desktop/)).toBeInTheDocument();
   });
 
   it("renders the disconnected-runtime prompts and the Workspace fallback text", async () => {
     renderAt("/settings");
-    expect(await screen.findByText("Connect the runtime to configure models.")).toBeInTheDocument();
+    expect(await screen.findByText("Coming soon")).toBeInTheDocument();
     expect(screen.getByText("Connect the runtime to configure MCP servers.")).toBeInTheDocument();
     expect(screen.getByText("available in the desktop app")).toBeInTheDocument();
   });
@@ -46,6 +49,7 @@ describe("Settings page strings (i18n)", () => {
     let view: ReturnType<typeof renderAt> | undefined;
     try {
       useRuntimeStore.setState({ status: "ready", defaultModel: null });
+      useUiStore.setState({ modelAccessMode: "developer-byok" });
       view = renderAt("/settings");
       // No client behind this render: the Models card sits in its loading
       // state while the separate Providers card is already on screen.
@@ -55,6 +59,7 @@ describe("Settings page strings (i18n)", () => {
     } finally {
       view?.unmount();
       useRuntimeStore.setState({ status: original.status, defaultModel: original.defaultModel });
+      useUiStore.setState({ modelAccessMode: "boya-cloud" });
     }
   });
 });

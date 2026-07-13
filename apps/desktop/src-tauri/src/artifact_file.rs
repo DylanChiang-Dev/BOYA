@@ -630,7 +630,7 @@ mod tests {
 
     #[test]
     fn list_dir_sorts_dirs_first_and_skips_hidden() {
-        let root = std::env::temp_dir().join(format!("ai4s-listdir-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("boya-listdir-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(root.join("sub")).unwrap();
         std::fs::create_dir_all(root.join(".hidden")).unwrap();
@@ -665,7 +665,7 @@ mod tests {
 
     #[test]
     fn unique_name_dedupes_with_numeric_suffix() {
-        let dir = std::env::temp_dir().join(format!("ai4s-unique-test-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("boya-unique-test-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
 
@@ -695,7 +695,7 @@ mod tests {
 
     #[test]
     fn locate_finds_literal_bare_and_missing_paths() {
-        let root = std::env::temp_dir().join(format!("ai4s-locate-test-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("boya-locate-test-{}", std::process::id()));
         std::fs::create_dir_all(root.join("proj")).unwrap();
         std::fs::create_dir_all(root.join("node_modules/pkg")).unwrap();
         std::fs::write(root.join("root.pdf"), b"x").unwrap();
@@ -732,7 +732,7 @@ mod tests {
 
     #[test]
     fn locate_prefers_the_newest_of_duplicate_basenames() {
-        let root = std::env::temp_dir().join(format!("ai4s-locate-dup-test-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("boya-locate-dup-test-{}", std::process::id()));
         std::fs::create_dir_all(root.join("old")).unwrap();
         std::fs::create_dir_all(root.join("new")).unwrap();
         std::fs::write(root.join("old/report.pdf"), b"x").unwrap();

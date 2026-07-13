@@ -62,26 +62,23 @@
   },
   "starters": {
     "newSession": "新建会话",
-    "heading": "我们该研究什么？",
-    "subheading": "在下方描述您的分析——或从以下选项开始。",
-    "demo": {
-      "title": "端到端运行一次演示分析",
-      "description": "模拟一份数据集，拟合模型，并生成图表和可追溯的报告。"
+    "heading": "您的研究进行到哪里？",
+    "subheading": "从 Boya 开始，或选择一项明确任务。",
+    "boya": {
+      "title": "用 Boya 继续研究",
+      "description": "定位当前阶段，完成一个步骤，并在下一个决策点停下。"
     },
-    "analyze": {
-      "title": "分析我的数据",
-      "description": "让代理处理您添加的文件；获取图表和报告。"
+    "question": {
+      "title": "收敛研究问题",
+      "description": "把宽泛兴趣收敛为有边界的选项，最终选择留给您。"
     },
-    "audit": {
-      "title": "审查报告的可追溯性",
-      "description": "检查引用、无来源数字，以及图表与代码的一致性。"
+    "references": {
+      "title": "核查参考文献",
+      "description": "逐笔对照真实来源，不确定的条目保留为待查。"
     },
-    "example-climate": {
-      "title": "探索示例：气候趋势",
-      "description": "真实的 NASA GISTEMP 数据——趋势、十年对比、图表和报告。"
-    },
-    "error": {
-      "setup": "无法设置示例：{{message}}"
+    "review": {
+      "title": "审查论文初稿",
+      "description": "区分必改问题、可辩选择与审稿人可能的误读。"
     }
   },
   "live": {

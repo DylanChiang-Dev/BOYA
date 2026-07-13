@@ -54,11 +54,14 @@
     }
   },
   "skills": {
-    "title": "技能与代理",
+    "title": "技能",
     "description": {
-      "prefix": "从 OpenCode 运行时实时加载——内置的 ai4s-skills 包，以及您工作区中位于 ",
+      "prefix": "从 OpenCode 运行时实时加载——锁定版本的 Boya 工作流，以及您工作区中位于 ",
       "suffix": " 下的所有内容。"
     },
+    "boyaSection": "Boya 工作流（{{count}}）",
+    "utilitySection": "辅助工具（{{count}}）",
+    "boyaMissing": "Boya 工作流未加载。请运行 skill 获取步骤并重启应用。",
     "install": {
       "sectionTitle": "安装技能",
       "placeholder": "粘贴一个技能（Markdown）或 GitHub URL — 代理会将其安装到 .opencode/skills/",
@@ -92,7 +95,7 @@
         "user": "用户"
       }
     },
-    "disconnected": "连接运行时以列出其已加载的技能和代理。"
+    "disconnected": "连接运行时以列出已加载的技能。"
   },
   "notFound": {
     "title": "404 — 未找到",

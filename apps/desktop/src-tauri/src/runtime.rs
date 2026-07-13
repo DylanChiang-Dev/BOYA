@@ -25,7 +25,7 @@ pub struct RuntimeState {
     lifecycle: Mutex<RuntimeLifecycle>,
 }
 
-/// App-private runtime root, e.g. ~/Library/Application Support/com.ai4s.workbench/runtime
+/// App-private runtime root, e.g. ~/Library/Application Support/dev.dylanchiang.boya/runtime
 fn runtime_root(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(app
         .path()
@@ -50,7 +50,7 @@ fn base_workspace_file(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 /// The active workspace folder OpenCode / the kernel / previews / provenance all
-/// operate in. Defaults to the base folder (`~/Documents/OpenScience`) until the
+/// operate in. Defaults to the base folder (`~/Documents/Boya`) until the
 /// user opens or creates another one; the choice persists across restarts.
 pub fn workspace_dir(app: &AppHandle) -> Result<PathBuf, String> {
     if let Ok(f) = active_workspace_file(app) {
@@ -65,7 +65,7 @@ pub fn workspace_dir(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 /// The workspace root new dated session folders are created under. A folder
-/// the user picked in Settings wins; the default is `~/Documents/OpenScience`
+/// the user picked in Settings wins; the default is `~/Documents/Boya`
 /// (no space — the agent runs shell commands against this path, and unquoted
 /// spaces break them), falling back to `$HOME/Documents`.
 pub fn base_workspace_dir(app: &AppHandle) -> Result<PathBuf, String> {
@@ -86,20 +86,7 @@ pub fn base_workspace_dir(app: &AppHandle) -> Result<PathBuf, String> {
             PathBuf::from(home).join("Documents")
         }
     };
-    let dir = docs.join("OpenScience");
-
-    // One-time migrations, oldest name last. A failed rename (e.g. cross-volume)
-    // keeps the existing location rather than splitting the user's files.
-    if !dir.exists() {
-        for old in [docs.join("Open Science"), runtime_root(app)?.join("workspace")] {
-            if old.is_dir() {
-                if std::fs::rename(&old, &dir).is_ok() {
-                    break;
-                }
-                return Ok(old);
-            }
-        }
-    }
+    let dir = docs.join("Boya");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir)
 }
@@ -160,9 +147,9 @@ pub fn import_opencode_login(app: AppHandle, state: State<'_, RuntimeState>) -> 
 
 /// Deploy the bundled skill packs (Tauri resources) into the app-private
 /// profile's global skills dir (`<xdg-config>/opencode/skills/`), which OpenCode
-/// scans regardless of project detection: `skills/` is the external ai4s-skills
-/// pack, `skills-office/` Anthropic's document skills (docx/pdf/pptx/xlsx),
-/// `skills-core/` the first-party skills from `runtime/skills/core`. The
+/// scans regardless of project detection: `skills-boya/` is the pinned Boya
+/// workflow, `skills-office/` contains document skills (docx/pdf/pptx/xlsx),
+/// and `skills-core/` contains the curated research utility set. The
 /// workspace's own `.opencode/skills/` stays reserved for skills the user
 /// installs. Runs before every sidecar start so app upgrades refresh the packs.
 fn deploy_bundled_skills(app: &AppHandle) {
@@ -172,7 +159,7 @@ fn deploy_bundled_skills(app: &AppHandle) {
     };
     let mut bundled: std::collections::HashSet<std::ffi::OsString> = std::collections::HashSet::new();
     let mut all_ok = true;
-    for resource in ["skills", "skills-office", "skills-core"] {
+    for resource in ["skills-boya", "skills-office", "skills-core"] {
         let src = match app
             .path()
             .resolve(resource, tauri::path::BaseDirectory::Resource)
@@ -594,7 +581,7 @@ fn spawn_sidecar(app: &AppHandle, port: u16) -> Result<CommandChild, String> {
         // Lets bundled skill helpers (e.g. remote-compute's record_run.py) stamp
         // the recording app version into provenance — they run outside the app
         // and can't otherwise know it.
-        .env("OPENSCIENCE_APP_VERSION", app.package_info().version.to_string())
+        .env("BOYA_APP_VERSION", app.package_info().version.to_string())
         .current_dir(workspace);
     // GUI-launched apps get a minimal PATH; give the agent the user's real tools.
     let mut cmd = cmd.env("PATH", enriched_path());
@@ -666,7 +653,7 @@ pub fn workspace_path(app: AppHandle) -> Result<String, String> {
     Ok(workspace_dir(&app)?.to_string_lossy().to_string())
 }
 
-/// The base folder new dated workspaces are created under (`~/Documents/OpenScience`).
+/// The base folder new dated workspaces are created under (`~/Documents/Boya`).
 #[tauri::command]
 pub fn workspace_base(app: AppHandle) -> Result<String, String> {
     Ok(base_workspace_dir(&app)?.to_string_lossy().to_string())
@@ -734,14 +721,14 @@ pub fn set_workspace(
 /// Record which session owns the active workspace, so bundled skill helpers
 /// (record_run.py) can stamp remote runs with their `sessionId` — the app knows
 /// the id but the off-app helper only sees the workspace. Written as
-/// `<workspace>/.openscience/session.txt`; best-effort, empty ids are ignored.
+/// `<workspace>/.boya/session.txt`; best-effort, empty ids are ignored.
 #[tauri::command]
 pub fn mark_session(app: AppHandle, session_id: String) -> Result<(), String> {
     let id = session_id.trim();
     if id.is_empty() {
         return Ok(());
     }
-    let dir = workspace_dir(&app)?.join(".openscience");
+    let dir = workspace_dir(&app)?.join(".boya");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let path = dir.join("session.txt");
     // Write-then-rename so a concurrent read never sees a half-written id.

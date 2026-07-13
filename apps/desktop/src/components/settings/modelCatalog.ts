@@ -1,4 +1,4 @@
-import type { ProviderInfo } from "@ai4s/sdk";
+import type { ProviderInfo } from "@boya/sdk";
 
 export interface ModelOption {
   key: string;

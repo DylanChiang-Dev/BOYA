@@ -78,7 +78,7 @@ class RecordRunGuardTest(unittest.TestCase):
                     self.assertNotEqual(raised.exception.code, 0)
                     self.assertIn("already recorded", stderr.getvalue())
 
-                    store = root / ".openscience" / "remote-runs.jsonl"
+                    store = root / ".boya" / "remote-runs.jsonl"
                     records = [json.loads(line) for line in store.read_text().splitlines()]
                     self.assertEqual(1, len(records))
                     self.assertEqual("results/demo/movie.mp4", records[0]["outputs"][0]["path"])

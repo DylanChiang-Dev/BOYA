@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import { latestRelease } from "./tauri";
 
-const RELEASE_URL = "https://api.github.com/repos/ai4s-research/open-science/releases/latest";
+const RELEASE_URL = "https://api.github.com/repos/DylanChiang-Dev/boya-desktop/releases/latest";
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
-const ENABLED_KEY = "openscience.update.enabled";
-const BADGE_KEY = "openscience.update.badge";
-const DISMISSED_KEY = "openscience.update.dismissed";
-const LAST_CHECKED_KEY = "openscience.update.lastCheckedAt";
-const LATEST_KEY = "openscience.update.latest";
+const ENABLED_KEY = "boya.update.enabled";
+const BADGE_KEY = "boya.update.badge";
+const DISMISSED_KEY = "boya.update.dismissed";
+const LAST_CHECKED_KEY = "boya.update.lastCheckedAt";
+const LATEST_KEY = "boya.update.latest";
 
 export interface UpdateInfo {
   version: string;
@@ -150,7 +150,7 @@ async function fetchLatestRelease(): Promise<UpdateInfo> {
 }
 
 const initial = {
-  enabled: readBool(ENABLED_KEY, true),
+  enabled: readBool(ENABLED_KEY, false),
   badgeEnabled: readBool(BADGE_KEY, true),
   dismissedVersion: typeof window === "undefined" ? null : window.localStorage.getItem(DISMISSED_KEY),
   lastCheckedAt: readNumber(LAST_CHECKED_KEY),

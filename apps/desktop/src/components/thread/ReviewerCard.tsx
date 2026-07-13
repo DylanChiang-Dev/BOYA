@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, ShieldCheck, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { FindingLevel, ReviewerBlock } from "@ai4s/shared";
+import type { FindingLevel, ReviewerBlock } from "@boya/shared";
 import { cn } from "@/lib/cn";
 
 const BADGE: Record<FindingLevel, { className: string }> = {

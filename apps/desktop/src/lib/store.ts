@@ -1,13 +1,17 @@
 import { create } from "zustand";
 import { detectInitialLocale, LOCALE_KEY } from "@/i18n/config";
 import { isMacUA, isTauri, trafficLightsPresent } from "./tauri";
+import type { ModelAccessMode } from "./modelAccess";
+
+export type { ModelAccessMode } from "./modelAccess";
 
 export type Theme = "light" | "dark";
 
-const THEME_KEY = "ai4s.theme";
-const SIDEBAR_WIDTH_KEY = "ai4s.sidebar.width";
-const SIDEBAR_COLLAPSED_KEY = "ai4s.sidebar.collapsed";
-const INSPECTOR_WIDTH_KEY = "ai4s.inspector.width";
+const THEME_KEY = "boya.theme";
+const SIDEBAR_WIDTH_KEY = "boya.sidebar.width";
+const SIDEBAR_COLLAPSED_KEY = "boya.sidebar.collapsed";
+const INSPECTOR_WIDTH_KEY = "boya.inspector.width";
+const MODEL_ACCESS_KEY = "boya.modelAccessMode";
 
 export const SIDEBAR_MIN = 184;
 export const SIDEBAR_MAX = 340;
@@ -39,10 +43,18 @@ function initialInspectorWidth(): number {
   return Math.min(INSPECTOR_MAX, Math.max(INSPECTOR_MIN, saved));
 }
 
+function initialModelAccessMode(): ModelAccessMode {
+  if (typeof window === "undefined") return "boya-cloud";
+  return window.localStorage.getItem(MODEL_ACCESS_KEY) === "developer-byok"
+    ? "developer-byok"
+    : "boya-cloud";
+}
+
 interface UiState {
   theme: Theme;
   /** Active UI locale (BCP-47). Persisted; mirrors the `theme` pattern. */
   locale: string;
+  modelAccessMode: ModelAccessMode;
   inspectorOpen: boolean;
   /** Right-pane width in px (persisted); the pane can also be maximized to
    *  cover the whole window (session-ephemeral, reset when the pane closes). */
@@ -60,6 +72,7 @@ interface UiState {
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
   setLocale: (locale: string) => void;
+  setModelAccessMode: (mode: ModelAccessMode) => void;
   setInspectorOpen: (open: boolean) => void;
   setInspectorWidth: (width: number) => void;
   setInspectorMaximized: (maximized: boolean) => void;
@@ -74,6 +87,7 @@ interface UiState {
 export const useUiStore = create<UiState>((set, get) => ({
   theme: initialTheme(),
   locale: detectInitialLocale(),
+  modelAccessMode: initialModelAccessMode(),
   inspectorOpen: true,
   sidebarCollapsed:
     typeof window !== "undefined" && window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1",
@@ -88,6 +102,10 @@ export const useUiStore = create<UiState>((set, get) => ({
   setLocale: (locale) => {
     if (typeof window !== "undefined") window.localStorage.setItem(LOCALE_KEY, locale);
     set({ locale });
+  },
+  setModelAccessMode: (modelAccessMode) => {
+    if (typeof window !== "undefined") window.localStorage.setItem(MODEL_ACCESS_KEY, modelAccessMode);
+    set({ modelAccessMode });
   },
   setInspectorOpen: (inspectorOpen) => set({ inspectorOpen }),
   inspectorWidth: initialInspectorWidth(),

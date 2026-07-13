@@ -20,10 +20,10 @@ describe("Composer strings (i18n)", () => {
 describe("WorkflowStarters strings (i18n)", () => {
   it("renders the welcome copy and a starter card's title/description in English", () => {
     render(<WorkflowStarters onPick={() => {}} />);
-    expect(screen.getByText("What should we look into?")).toBeInTheDocument();
-    expect(screen.getByText("Run a demo analysis, end to end")).toBeInTheDocument();
+    expect(screen.getByText("Where are you in your research?")).toBeInTheDocument();
+    expect(screen.getByText("Continue with Boya")).toBeInTheDocument();
     expect(
-      screen.getByText("Simulate a dataset, fit a model, and produce a figure and a traceable report."),
+      screen.getByText("Locate your stage, complete one focused step, and stop at your next decision."),
     ).toBeInTheDocument();
   });
 });

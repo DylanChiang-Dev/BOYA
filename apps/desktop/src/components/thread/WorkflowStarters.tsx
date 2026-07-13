@@ -1,7 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { ChevronRight, FileSearch, FlaskConical, Globe2, LineChart } from "lucide-react";
-import { installExample, isTauri } from "@/lib/tauri";
-import { toast } from "@/lib/toast";
+import { BookCheck, ChevronRight, CircleHelp, Compass, ScanSearch } from "lucide-react";
 
 export interface WorkflowStarter {
   id: string;
@@ -9,52 +7,38 @@ export interface WorkflowStarter {
   /** Sent to the agent as-is — content, not UI copy, so it is never translated.
    *  The card's display title/description live in `session:starters.<id>.*`. */
   prompt: string;
-  /** Side effect to run before sending the prompt (e.g. install example files). */
-  prepare?: () => Promise<void>;
 }
 
-/** One-click full-workflow prompts (P0-1): a single request that carries the
- *  agent through data → code → figure → report, all inside the app. */
+/** Focused entry points. Each prompt invokes one Boya stage and preserves the
+ *  human decision gate instead of starting an autonomous research pipeline. */
 export const WORKFLOW_STARTERS: WorkflowStarter[] = [
   {
-    id: "demo",
-    icon: <FlaskConical size={17} strokeWidth={1.75} />,
+    id: "boya",
+    icon: <Compass size={17} strokeWidth={1.75} />,
     prompt:
-      "Run a complete demo analysis end to end: simulate a small dose–response dataset in Python, " +
-      "analyze it (fit + summary statistics), save one publication-quality figure as demo_analysis/figure1.png, " +
-      "and write demo_analysis/report.md summarizing the findings — every number in the report must come from " +
-      "the code you ran. Keep all files in the workspace.",
+      "Use the boya skill to inspect the research artifacts in this workspace, locate my current stage, " +
+      "and carry out only the next focused stage. Stop at the next decision that only I can make.",
   },
   {
-    id: "analyze",
-    icon: <LineChart size={17} strokeWidth={1.75} />,
+    id: "question",
+    icon: <CircleHelp size={17} strokeWidth={1.75} />,
     prompt:
-      "Analyze the data file I added to the workspace end to end: explore it, run the analysis in code, " +
-      "save at least one figure as a PNG, and write report.md with the findings — every number traced to " +
-      "the code that produced it. Ask me which file to use if there is more than one candidate.",
+      "Use the research-question skill to help me turn a broad research interest into a bounded, " +
+      "researchable question. Ask only the questions that change the direction, and do not choose the final question for me.",
   },
   {
-    id: "audit",
-    icon: <FileSearch size={17} strokeWidth={1.75} />,
+    id: "references",
+    icon: <BookCheck size={17} strokeWidth={1.75} />,
     prompt:
-      "Use the traceability-review skill to audit the report or manuscript in my workspace: resolve every " +
-      "citation, flag numbers with no traceable source, and check figures against the code that generated them. " +
-      "Ask me which document to audit if there is more than one candidate.",
+      "Use the reference-check skill to verify the reference list in this workspace. Check every entry, " +
+      "record the sources searched, and mark items not found as pending rather than fabricated.",
   },
   {
-    id: "example-climate",
-    icon: <Globe2 size={17} strokeWidth={1.75} />,
+    id: "review",
+    icon: <ScanSearch size={17} strokeWidth={1.75} />,
     prompt:
-      "Analyze the real climate dataset at climate-trends/data/gistemp_global_means.csv " +
-      "(NASA GISTEMP v4 global land–ocean temperature anomalies in °C vs the 1951–1980 mean; " +
-      "the header is on line 2 and missing values are `***` — see climate-trends/README.md). " +
-      "Load the annual J-D series, quantify the warming rate (°C/decade) over the full record and " +
-      "over 1975–present, compare decadal means, save one publication-quality figure as " +
-      "climate-trends/warming_trend.png, and write climate-trends/report.md citing the dataset " +
-      "source — every number must come from the code you ran.",
-    prepare: async () => {
-      if (isTauri) await installExample("climate-trends");
-    },
+      "Use the manuscript-review skill to review the manuscript in this workspace. Separate findings into " +
+      "must-fix, defensible, and likely misread, and leave every adoption decision to me.",
   },
 ];
 
@@ -69,13 +53,10 @@ export function WorkflowStarters({ onPick }: { onPick: (prompt: string) => void 
   // `starters.${id}.title` template, so each card's copy is looked up by id
   // from this literal-keyed map instead.
   const starterCopy: Record<string, { title: string; description: string }> = {
-    demo: { title: t("starters.demo.title"), description: t("starters.demo.description") },
-    analyze: { title: t("starters.analyze.title"), description: t("starters.analyze.description") },
-    audit: { title: t("starters.audit.title"), description: t("starters.audit.description") },
-    "example-climate": {
-      title: t("starters.example-climate.title"),
-      description: t("starters.example-climate.description"),
-    },
+    boya: { title: t("starters.boya.title"), description: t("starters.boya.description") },
+    question: { title: t("starters.question.title"), description: t("starters.question.description") },
+    references: { title: t("starters.references.title"), description: t("starters.references.description") },
+    review: { title: t("starters.review.title"), description: t("starters.review.description") },
   };
   return (
     <div className="flex min-h-[62vh] flex-col items-center justify-center">
@@ -94,21 +75,7 @@ export function WorkflowStarters({ onPick }: { onPick: (prompt: string) => void 
           {WORKFLOW_STARTERS.map((s) => (
             <button
               key={s.id}
-              onClick={() => {
-                void (async () => {
-                  try {
-                    await s.prepare?.();
-                  } catch (e) {
-                    toast.error(
-                      t("starters.error.setup", {
-                        message: e instanceof Error ? e.message : String(e),
-                      }),
-                    );
-                    return;
-                  }
-                  onPick(s.prompt);
-                })();
-              }}
+              onClick={() => onPick(s.prompt)}
               className="group flex w-full items-center gap-3.5 border-t border-border px-4 py-3.5 text-left transition-colors first:border-t-0 hover:bg-surface-2"
             >
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-2 text-accent ring-1 ring-border transition-colors group-hover:bg-surface">

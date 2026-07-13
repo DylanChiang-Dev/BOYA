@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
-import type { ProviderInfo } from "@ai4s/sdk";
+import type { ProviderInfo } from "@boya/sdk";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 

@@ -1,6 +1,6 @@
 // Run provenance (reproducibility recipe): every agent experiment execution —
 // a bash command that runs code — appends a run record to
-// <workspace>/.openscience/runs.jsonl: the command, code version (entry scripts
+// <workspace>/.boya/runs.jsonl: the command, code version (entry scripts
 // hashed), environment + hardware, and the files it produced. Complements
 // provenance.jsonl (authored file text); a run-produced file's provenance
 // version carries this run's id, so an artifact links back to its recipe.
@@ -12,7 +12,7 @@ use tauri::AppHandle;
 use crate::provenance::{capture_env, content_hash, EnvInfo, ProvenanceState};
 use crate::runtime::workspace_dir;
 
-const STORE_DIR: &str = ".openscience";
+const STORE_DIR: &str = ".boya";
 const RUNS_FILE: &str = "runs.jsonl";
 /// Remote runs (HPC/Modal) recorded by the remote-compute / modal-run skills, which
 /// can see the remote side the app can't. Same schema; read_runs merges both.
@@ -67,7 +67,7 @@ pub struct RunRecord {
     /// serialized (even empty) so the frontend can rely on the field existing.
     #[serde(default)]
     pub outputs: Vec<RunArtifact>,
-    /// Captured stdout/stderr, content-addressed to `.openscience/logs/<hash>.txt`.
+    /// Captured stdout/stderr, content-addressed to `.boya/logs/<hash>.txt`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub log_hash: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -263,7 +263,7 @@ fn append_run(root: &Path, record: &RunRecord) -> Result<(), String> {
     Ok(())
 }
 
-/// Read a content-addressed run log (`.openscience/logs/<hash>.txt`). `hash` is
+/// Read a content-addressed run log (`.boya/logs/<hash>.txt`). `hash` is
 /// validated to hex so it cannot escape the logs directory.
 pub fn read_log(root: &Path, hash: &str) -> Result<String, String> {
     if hash.is_empty() || !hash.chars().all(|c| c.is_ascii_hexdigit()) {
@@ -433,7 +433,7 @@ mod tests {
     use super::*;
 
     fn temp_root(tag: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("ai4s-runs-{tag}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("boya-runs-{tag}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir
@@ -483,8 +483,8 @@ mod tests {
     fn detects_only_files_modified_in_the_window() {
         let root = temp_root("window");
         std::fs::write(root.join("result.csv"), "a,b\n1,2\n").unwrap();
-        std::fs::create_dir_all(root.join(".openscience")).unwrap();
-        std::fs::write(root.join(".openscience/ignore.txt"), "x").unwrap();
+        std::fs::create_dir_all(root.join(".boya")).unwrap();
+        std::fs::write(root.join(".boya/ignore.txt"), "x").unwrap();
         std::fs::write(root.join("cache.pyc"), "x").unwrap();
 
         // A window in the distant past (ms) excludes just-created files.
@@ -496,7 +496,7 @@ mod tests {
         let outs = changed_outputs(&root, 0, now_ms);
         let paths: Vec<_> = outs.iter().map(|o| o.path.as_str()).collect();
         assert!(paths.contains(&"result.csv"));
-        assert!(!paths.iter().any(|p| p.starts_with(".openscience")));
+        assert!(!paths.iter().any(|p| p.starts_with(".boya")));
         assert!(!paths.iter().any(|p| p.ends_with(".pyc")));
 
         let _ = std::fs::remove_dir_all(root);
@@ -598,7 +598,7 @@ mod tests {
         // A local run at ts=100.
         record_run_inner(&root, "python a.py", None, Some(100_000), Some(101_000), "ok", Some("local".into()), None, None, None).unwrap();
         // A remote run at ts=200, written by the skill into remote-runs.jsonl.
-        let dir = root.join(".openscience");
+        let dir = root.join(".boya");
         std::fs::create_dir_all(&dir).unwrap();
         // Exactly the shape the record_run.py skill helper emits.
         let remote = r#"{"runId":"run_remote","ts":200,"command":"sbatch train.slurm","surface":"hpc","status":"ok","code":[{"path":"slurm/train.sbatch","size":14,"hash":"931ff5541588704b"}],"outputs":[{"path":"slurm/out.csv","size":10,"hash":"d9ddac7919a71e1e"}],"host":"login-a","jobId":"12345","remoteHardware":"1x A100 (node gpu-07), CUDA 12.2","wallMs":3600000}"#;
@@ -624,7 +624,7 @@ mod tests {
         // An SSH run recorded by record_run.py --env-file: the ambient interpreter
         // + package lockfile are pinned in `env`, and every script/output listed.
         let root = temp_root("ssh-env");
-        let dir = root.join(".openscience");
+        let dir = root.join(".boya");
         std::fs::create_dir_all(&dir).unwrap();
         let remote = r#"{"runId":"run_ssh","ts":300,"command":"bash run.sh","surface":"ssh","status":"ok","code":[{"path":"run.sh","size":36,"hash":"aa"},{"path":"humanoid_sim.py","size":4232,"hash":"bb"}],"outputs":[{"path":"results/x/result.json","size":13,"hash":"cc"},{"path":"results/x/trajectory.npz","size":49616,"hash":"dd"}],"host":"home-3090","remoteHardware":"24 CPU cores, 62 GB (CPU-only)","env":{"platform":"linux-x86_64","app":"0.1.7","python":"3.11.2","packages":{"count":3,"hash":"2e90ca4f3bdace4e"}}}"#;
         std::fs::write(dir.join("remote-runs.jsonl"), format!("{remote}\n")).unwrap();

@@ -19,7 +19,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import type { RunArtifact, RunRecord } from "@ai4s/shared";
+import type { RunArtifact, RunRecord } from "@boya/shared";
 import { queryRuns, readRunLog, reproduceRunPrompt, type RunFacet, type RunPage } from "@/lib/runs";
 import { openArtifactExternally } from "@/lib/artifactFile";
 import { copyText } from "@/lib/clipboard";

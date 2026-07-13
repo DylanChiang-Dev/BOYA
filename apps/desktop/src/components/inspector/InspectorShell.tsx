@@ -1,4 +1,4 @@
-import type { Inspector } from "@ai4s/shared";
+import type { Inspector } from "@boya/shared";
 import { ArtifactInspector } from "./ArtifactInspector";
 import { NotebookInspector } from "./NotebookInspector";
 import { PdfInspector } from "./PdfInspector";

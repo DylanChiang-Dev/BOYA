@@ -1,4 +1,4 @@
-import type { NotebookCell } from "@ai4s/shared";
+import type { NotebookCell } from "@boya/shared";
 import { isCodeLanguage, type KernelLanguage } from "./kernel";
 
 /** Minimal nbformat-4 shapes we read and write. */

@@ -1,7 +1,7 @@
 import { useRef, useState, type KeyboardEvent } from "react";
 import { ChevronDown, CornerDownLeft, NotebookPen, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { NotebookCell, NotebookInspector as NotebookInspectorT } from "@ai4s/shared";
+import type { NotebookCell, NotebookInspector as NotebookInspectorT } from "@boya/shared";
 import { CodeViewer } from "@/components/code-viewer/CodeViewer";
 import { PaneTitlebarInset } from "./RightPane";
 import { formatExecResult, kernelExecute } from "@/lib/kernel";

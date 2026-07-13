@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Open Science — social-science analysis integrity (P1-6).
+"""Boya — social-science analysis integrity (P1-6).
 
 Three deterministic checks that guard the decisive social-science risks:
 sycophantic over-interpretation, silent p-hacking / HARKing, and irreproducible
@@ -42,7 +42,7 @@ class Finding:
 
 _CODE_EXT = {".py", ".r", ".ipynb"}
 _PREREG = re.compile(r"(prereg|pre-reg|preregistration|analysis[_-]?plan)", re.IGNORECASE)
-_SKIP = {"node_modules", "__pycache__", ".git", ".openscience", ".venv", "venv"}
+_SKIP = {"node_modules", "__pycache__", ".git", ".boya", ".venv", "venv"}
 
 
 @dataclass

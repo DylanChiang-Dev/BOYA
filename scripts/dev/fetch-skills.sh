@@ -6,26 +6,34 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
-# ---- ai4s-skills: the default scientific pack ----
-AI4S_SKILLS_COMMIT="${AI4S_SKILLS_COMMIT:-8fa2ab0523082c135598909b227ed8feb48263ad}"
-OUT_DIR="$ROOT/runtime/skills/external/ai4s-skills"
+# ---- Boya: the human-in-the-loop research workflow ----
+BOYA_SKILLS_COMMIT="${BOYA_SKILLS_COMMIT:-591a37153c7b73a0d509981dd7e8028350e47761}"
+OUT_DIR="$ROOT/runtime/skills/external/boya"
 
-URL="https://github.com/ai4s-research/ai4s-skills/archive/${AI4S_SKILLS_COMMIT}.tar.gz"
+URL="https://github.com/DylanChiang-Dev/boya/archive/${BOYA_SKILLS_COMMIT}.tar.gz"
 TMP="$(mktemp -d)"
 echo "Downloading $URL"
 curl -fsSL "$URL" -o "$TMP/skills.tar.gz"
 tar -xzf "$TMP/skills.tar.gz" -C "$TMP"
 
-SRC="$(find "$TMP" -maxdepth 1 -type d -name 'ai4s-skills-*' | head -1)"
+SRC=""
+for candidate in "$TMP"/boya-*; do
+  [ -d "$candidate" ] && SRC="$candidate" && break
+done
 [ -d "$SRC/skills" ] || { echo "No skills/ directory in archive" >&2; exit 1; }
+
+SKILL_COUNT="$(find "$SRC/skills" -type f -name SKILL.md | wc -l | tr -d ' ')"
+[ "$SKILL_COUNT" = "15" ] || { echo "Expected 15 Boya skills, found $SKILL_COUNT" >&2; exit 1; }
+[ -f "$SRC/skills/boya/SKILL.md" ] || { echo "Missing Boya entry skill" >&2; exit 1; }
+[ ! -d "$SRC/skills/ai4s-agent" ] || { echo "Autonomous ai4s-agent must not be bundled" >&2; exit 1; }
 
 rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
 cp -R "$SRC/skills/." "$OUT_DIR/"
-echo "$AI4S_SKILLS_COMMIT" > "$OUT_DIR/.commit"
+echo "$BOYA_SKILLS_COMMIT" > "$OUT_DIR/.commit"
 rm -rf "$TMP"
 
-echo "Placed ai4s-skills@${AI4S_SKILLS_COMMIT:0:7} in $OUT_DIR:"
+echo "Placed boya@${BOYA_SKILLS_COMMIT:0:7} in $OUT_DIR:"
 ls "$OUT_DIR"
 
 # ---- Anthropic document skills: docx / pdf / pptx / xlsx ----
@@ -41,7 +49,10 @@ echo "Downloading $URL"
 curl -fsSL "$URL" -o "$TMP/skills.tar.gz"
 tar -xzf "$TMP/skills.tar.gz" -C "$TMP"
 
-SRC="$(find "$TMP" -maxdepth 1 -type d -name 'skills-*' | head -1)"
+SRC=""
+for candidate in "$TMP"/skills-*; do
+  [ -d "$candidate" ] && SRC="$candidate" && break
+done
 rm -rf "$OFFICE_OUT"
 mkdir -p "$OFFICE_OUT"
 for s in $OFFICE_SKILLS; do

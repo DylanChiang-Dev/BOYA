@@ -54,11 +54,14 @@
     }
   },
   "skills": {
-    "title": "スキル & エージェント",
+    "title": "スキル",
     "description": {
-      "prefix": "OpenCode ランタイムからライブで読み込まれます — バンドルされた ai4s-skills パックと、ワークスペース内の ",
+      "prefix": "OpenCode ランタイムからライブで読み込まれます — 固定版の Boya ワークフローと、ワークスペース内の ",
       "suffix": " にあるものすべて。"
     },
+    "boyaSection": "Boya ワークフロー（{{count}}）",
+    "utilitySection": "補助ツール（{{count}}）",
+    "boyaMissing": "Boya ワークフローが読み込まれていません。skill 取得手順を実行してアプリを再起動してください。",
     "install": {
       "sectionTitle": "スキルをインストール",
       "placeholder": "スキル（Markdown）または GitHub URL を貼り付けてください — エージェントが .opencode/skills/ にインストールします",
@@ -92,7 +95,7 @@
         "user": "ユーザー"
       }
     },
-    "disconnected": "読み込まれたスキルとエージェントを一覧表示するには、ランタイムに接続してください。"
+    "disconnected": "読み込まれたスキルを一覧表示するには、ランタイムに接続してください。"
   },
   "notFound": {
     "title": "404 — 見つかりません",

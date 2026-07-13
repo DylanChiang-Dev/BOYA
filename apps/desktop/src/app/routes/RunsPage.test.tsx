@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { RunRecord } from "@ai4s/shared";
+import type { RunRecord } from "@boya/shared";
 import type { RunPage, RunQuery } from "@/lib/runs";
 import { useUiStore } from "@/lib/store";
 import { RunsPage } from "./RunsPage";

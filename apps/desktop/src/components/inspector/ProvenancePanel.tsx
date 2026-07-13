@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight, Loader2, MessageSquare, Package, RotateCcw, Terminal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import type { ProvenanceRecord, RunRecord } from "@ai4s/shared";
+import type { ProvenanceRecord, RunRecord } from "@boya/shared";
 import { listProvenance, readEnvLockfile } from "@/lib/provenance";
 import { listRuns, reproduceRunPrompt } from "@/lib/runs";
 import { useUiStore } from "@/lib/store";
@@ -15,7 +15,7 @@ import i18n from "@/i18n";
 export function reproducePrompt(r: ProvenanceRecord): string {
   const pkgs = r.env?.packages;
   const pkgNote = pkgs
-    ? ` The environment had ${pkgs.count} installed Python packages, listed in \`.openscience/env/${pkgs.hash}.txt\` — if the regenerated result differs, install matching versions from that lockfile and re-run.`
+    ? ` The environment had ${pkgs.count} installed Python packages, listed in \`.boya/env/${pkgs.hash}.txt\` — if the regenerated result differs, install matching versions from that lockfile and re-run.`
     : "";
   const env = r.env
     ? ` It was produced with${r.env.python ? ` Python ${r.env.python} on` : ""} ${r.env.platform}.${pkgNote}`
@@ -28,7 +28,7 @@ export function reproducePrompt(r: ProvenanceRecord): string {
   // record is not runnable, so tell the agent where the full code lives.
   const truncNote = content.endsWith("[truncated]")
     ? " NOTE: the recorded code below is truncated at the store's size cap — read the full " +
-      `record for \`${r.path}\` from \`.openscience/provenance.jsonl\` before re-running.`
+      `record for \`${r.path}\` from \`.boya/provenance.jsonl\` before re-running.`
     : "";
   return (
     `Reproduce \`${r.path}\` (provenance v${r.version}).${env} ` +
@@ -47,7 +47,7 @@ function longestBacktickRun(text: string): number {
 /**
  * The provenance History of one artifact: every recorded version with the code
  * that produced it, the tool, the model, and a link back to the originating
- * conversation. Data comes from `.openscience/provenance.jsonl` (P0-3).
+ * conversation. Data comes from `.boya/provenance.jsonl` (P0-3).
  */
 export function ProvenancePanel({ path, language }: { path: string; language?: string }) {
   const { t } = useTranslation(["inspector", "common"]);

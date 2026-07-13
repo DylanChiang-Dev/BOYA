@@ -52,10 +52,10 @@ and fall back to whatever text you can read — do not fabricate identifiers.
 
 ## Check 3 · Figure ↔ code consistency
 
-1. Read `.openscience/provenance.jsonl` in the workspace — one JSON record per
+1. Read `.boya/provenance.jsonl` in the workspace — one JSON record per
    line: `{path, version, ts, tool, content, …}`; `ts` is epoch seconds. It
    records every file version the agent wrote. The directory is hidden: read
-   the file directly (`cat .openscience/provenance.jsonl`) instead of relying
+   the file directly (`cat .boya/provenance.jsonl`) instead of relying
    on `ls`. Fall back to file mtimes only when the file is truly absent.
 2. For each figure the document references:
    - Latest record `ts` for the figure file (fall back to file mtime when the

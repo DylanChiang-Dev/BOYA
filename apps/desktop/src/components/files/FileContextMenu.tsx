@@ -1,7 +1,7 @@
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { Copy, ExternalLink, FolderOpen } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { FileRoot } from "@ai4s/shared";
+import type { FileRoot } from "@boya/shared";
 import {
   absoluteArtifactPath,
   openArtifactExternally,

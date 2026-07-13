@@ -25,13 +25,13 @@ function baseKeysFor(locale: string): Set<string> {
 }
 
 describe("locale key parity (base keys)", () => {
-  const english = baseKeysFor(DEFAULT_LOCALE);
+  const baseline = baseKeysFor(DEFAULT_LOCALE);
   const others = shippedLocales().map((l) => l.code).filter((c) => c !== DEFAULT_LOCALE);
 
-  it.each(others)("%s has exactly the English base-key set", (code) => {
+  it.each(others)("%s has exactly the default locale's base-key set", (code) => {
     const theirs = baseKeysFor(code);
-    const missing = [...english].filter((k) => !theirs.has(k));
-    const extra = [...theirs].filter((k) => !english.has(k));
+    const missing = [...baseline].filter((k) => !theirs.has(k));
+    const extra = [...theirs].filter((k) => !baseline.has(k));
     expect({ code, missing, extra }).toEqual({ code, missing: [], extra: [] });
   });
 

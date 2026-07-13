@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { PdfInspector as PdfInspectorT } from "@ai4s/shared";
+import type { PdfInspector as PdfInspectorT } from "@boya/shared";
 import { useScrollMemory } from "@/lib/scrollMemory";
 import { PaneTitlebarInset } from "./RightPane";
 

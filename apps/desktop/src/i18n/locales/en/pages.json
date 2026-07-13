@@ -54,11 +54,14 @@
     }
   },
   "skills": {
-    "title": "Skills & Agents",
+    "title": "Skills",
     "description": {
-      "prefix": "Loaded live from the OpenCode runtime — the bundled ai4s-skills pack plus anything under ",
+      "prefix": "Loaded live from the OpenCode runtime — the pinned Boya workflow plus anything under ",
       "suffix": " in your workspace."
     },
+    "boyaSection": "Boya workflow ({{count}})",
+    "utilitySection": "Supporting tools ({{count}})",
+    "boyaMissing": "The Boya workflow is not loaded. Run the skill fetch step and restart the app.",
     "install": {
       "sectionTitle": "Install a skill",
       "placeholder": "Paste a skill (Markdown) or a GitHub URL — the agent installs it into .opencode/skills/",
@@ -92,7 +95,7 @@
         "user": "user"
       }
     },
-    "disconnected": "Connect the runtime to list the skills and agents it has loaded."
+    "disconnected": "Connect the runtime to list the skills it has loaded."
   },
   "notFound": {
     "title": "404 — Not found",

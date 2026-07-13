@@ -1,4 +1,4 @@
-import type { ArtifactBlock, FigureAnnotation, ThreadBlock } from "@ai4s/shared";
+import type { ArtifactBlock, FigureAnnotation, ThreadBlock } from "@boya/shared";
 import { AgentMessage, DataTable, RunningJobsOverlay, StatusLine, UserMessage } from "./atoms";
 import { ToolCallRow } from "./ToolCallRow";
 import { ToolGroup, groupToolBlocks } from "./ToolGroup";

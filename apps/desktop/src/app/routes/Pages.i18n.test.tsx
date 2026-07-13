@@ -10,7 +10,11 @@ afterEach(() => useUiStore.getState().setLocale("en"));
 
 // COPYCAT RULE: useRuntimeStore is also module-global — restore the
 // disconnected default after any test that fakes a "ready" runtime.
-const RUNTIME_DEFAULTS = { status: useRuntimeStore.getState().status, agents: useRuntimeStore.getState().agents };
+const RUNTIME_DEFAULTS = {
+  status: useRuntimeStore.getState().status,
+  agents: useRuntimeStore.getState().agents,
+  skills: useRuntimeStore.getState().skills,
+};
 afterEach(() => useRuntimeStore.setState(RUNTIME_DEFAULTS));
 
 describe("NotebooksPage strings (i18n)", () => {
@@ -33,25 +37,25 @@ describe("FilesPage strings (i18n)", () => {
 describe("SkillsPage strings (i18n)", () => {
   it("renders the page heading and the disconnected-runtime prompts in English", async () => {
     renderAt("/skills");
-    expect(await screen.findByRole("heading", { level: 1, name: "Skills & Agents" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Skills" })).toBeInTheDocument();
     expect(screen.getByText("Environment detection runs in the desktop app.")).toBeInTheDocument();
     expect(
-      screen.getByText("Connect the runtime to list the skills and agents it has loaded."),
+      screen.getByText("Connect the runtime to list the skills it has loaded."),
     ).toBeInTheDocument();
   });
 
-  it("translates the known agent-mode badge and falls back to the raw value for an unknown mode", async () => {
+  it("groups Boya workflow skills separately from supporting tools", async () => {
     useRuntimeStore.setState({
       status: "ready",
-      agents: [
-        { name: "build", description: "Primary build agent", mode: "primary" },
-        { name: "custom-thing", description: "Some external agent", mode: "future-mode" },
+      skills: [
+        { name: "boya", description: "Boya entry workflow", location: "/builtin/boya" },
+        { name: "pdf", description: "PDF utility", location: "/builtin/pdf" },
       ],
     });
     renderAt("/skills");
-    expect(await screen.findByText("build")).toBeInTheDocument();
-    expect(screen.getByText("primary")).toBeInTheDocument();
-    // Unknown mode values (outside the closed set OpenCode emits) render raw, unmodified.
-    expect(screen.getByText("future-mode")).toBeInTheDocument();
+    expect(await screen.findByText("Boya workflow (1)")).toBeInTheDocument();
+    expect(screen.getByText("Supporting tools (1)")).toBeInTheDocument();
+    expect(screen.getByText("boya")).toBeInTheDocument();
+    expect(screen.getByText("pdf")).toBeInTheDocument();
   });
 });

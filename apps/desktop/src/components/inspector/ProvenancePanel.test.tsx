@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProvenanceRecord, RunRecord } from "@ai4s/shared";
+import type { ProvenanceRecord, RunRecord } from "@boya/shared";
 import { useUiStore } from "@/lib/store";
 import { ProvenancePanel, reproducePrompt } from "./ProvenancePanel";
 
@@ -94,7 +94,7 @@ describe("ProvenancePanel", () => {
     expect(draft).toContain("print(2)");
     // The reproduce prompt references the captured package lockfile.
     expect(draft).toContain("3 installed Python packages");
-    expect(draft).toContain(".openscience/env/deadbeef.txt");
+    expect(draft).toContain(".boya/env/deadbeef.txt");
   });
 
   it("reveals the captured package lockfile on demand", async () => {
@@ -187,6 +187,6 @@ describe("reproducePrompt", () => {
   it("flags truncated records and points at the full provenance store", () => {
     const prompt = reproducePrompt(record("big = 1\n… [truncated]"));
     expect(prompt).toContain("truncated");
-    expect(prompt).toContain(".openscience/provenance.jsonl");
+    expect(prompt).toContain(".boya/provenance.jsonl");
   });
 });

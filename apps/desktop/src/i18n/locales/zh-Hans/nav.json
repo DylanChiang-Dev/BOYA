@@ -40,6 +40,8 @@
     "runtime": "运行时",
     "model": "模型",
     "modelNotSet": "未设置",
+    "boyaCloud": "Boya Cloud",
+    "comingSoon": "即将推出",
     "values": {
       "ready": "就绪",
       "connecting": "连接中",
@@ -53,8 +55,8 @@
     "noResults": "无结果。",
     "actions": {
       "newSession": "新建会话",
-      "analyzeData": "分析我的数据（新建工作流）",
-      "auditReport": "审查报告（溯源性审查）",
+      "analyzeData": "用 Boya 继续研究",
+      "auditReport": "核查参考文献",
       "openNotebooks": "打开笔记本",
       "manageSkills": "管理技能",
       "openSettings": "打开设置",

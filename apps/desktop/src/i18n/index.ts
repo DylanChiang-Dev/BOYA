@@ -3,7 +3,7 @@ import { initReactI18next } from "react-i18next";
 
 import { DEFAULT_LOCALE, detectInitialLocale } from "./config";
 
-// Statically bundled: the whole UI string set across 7 languages is a few KB,
+// Statically bundled: the whole UI string set is small enough to ship eagerly,
 // so it ships in the main chunk. Revisit lazy-loading only if this grows large.
 import enCommon from "./locales/en/common.json";
 import enNav from "./locales/en/nav.json";
@@ -22,6 +22,15 @@ import zhSession from "./locales/zh-Hans/session.json";
 import zhInspector from "./locales/zh-Hans/inspector.json";
 import zhErrors from "./locales/zh-Hans/errors.json";
 import zhPages from "./locales/zh-Hans/pages.json";
+
+import zhHantCommon from "./locales/zh-Hant/common.json";
+import zhHantNav from "./locales/zh-Hant/nav.json";
+import zhHantSettings from "./locales/zh-Hant/settings.json";
+import zhHantRuns from "./locales/zh-Hant/runs.json";
+import zhHantSession from "./locales/zh-Hant/session.json";
+import zhHantInspector from "./locales/zh-Hant/inspector.json";
+import zhHantErrors from "./locales/zh-Hant/errors.json";
+import zhHantPages from "./locales/zh-Hant/pages.json";
 
 import jaCommon from "./locales/ja/common.json";
 import jaNav from "./locales/ja/nav.json";
@@ -73,6 +82,7 @@ export const NAMESPACES = [
 ] as const;
 
 const resources = {
+  "zh-Hant": { common: zhHantCommon, nav: zhHantNav, settings: zhHantSettings, runs: zhHantRuns, session: zhHantSession, inspector: zhHantInspector, errors: zhHantErrors, pages: zhHantPages },
   en: { common: enCommon, nav: enNav, settings: enSettings, runs: enRuns, session: enSession, inspector: enInspector, errors: enErrors, pages: enPages },
   "zh-Hans": { common: zhCommon, nav: zhNav, settings: zhSettings, runs: zhRuns, session: zhSession, inspector: zhInspector, errors: zhErrors, pages: zhPages },
   ja: { common: jaCommon, nav: jaNav, settings: jaSettings, runs: jaRuns, session: jaSession, inspector: jaInspector, errors: jaErrors, pages: jaPages },

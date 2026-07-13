@@ -15,10 +15,10 @@ Responsibilities:
 ## Runtime directory (per OS)
 
 ```text
-macOS:   ~/Library/Application Support/AI4S Workbench/
-Windows: %APPDATA%/AI4S Workbench/
-generic: ~/.ai4s-workbench/
-  config/  runtime/{opencode,python,node}/  profiles/ai4s-workbench/
+macOS:   ~/Library/Application Support/dev.dylanchiang.boya/
+Windows: %APPDATA%/dev.dylanchiang.boya/
+generic: ~/.boya-desktop/
+  config/  runtime/{opencode,python,node}/  profiles/boya-desktop/
   workspaces/  logs/  cache/  secrets/
 ```
 

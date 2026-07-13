@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ProviderInfo } from "@ai4s/sdk";
+import type { ProviderInfo } from "@boya/sdk";
 import {
   filterModelOptions,
   flattenModelOptions,

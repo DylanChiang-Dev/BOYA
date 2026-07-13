@@ -13,7 +13,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import type { NotebookCell } from "@ai4s/shared";
+import type { NotebookCell } from "@boya/shared";
 import { readArtifact, writeWorkspaceFile } from "@/lib/artifactFile";
 import { ProvenancePanel } from "@/components/inspector/ProvenancePanel";
 import { PaneTitlebarInset } from "@/components/inspector/RightPane";

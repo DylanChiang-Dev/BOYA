@@ -1,9 +1,9 @@
 // Artifact provenance (P0-3): turn the agent's successful file-writing tool
-// calls into version records in `.openscience/provenance.jsonl`, and read them
+// calls into version records in `.boya/provenance.jsonl`, and read them
 // back for the artifact History view. Pure derivation is separated from the
 // Tauri bridge so it can be unit-tested without a desktop shell.
-import type { ToolUpdatedEvent } from "@ai4s/sdk";
-import type { ProvenanceRecord } from "@ai4s/shared";
+import type { ToolUpdatedEvent } from "@boya/sdk";
+import type { ProvenanceRecord } from "@boya/shared";
 import { isTauri, logDebug } from "./tauri";
 import { deriveArtifact } from "./artifacts";
 

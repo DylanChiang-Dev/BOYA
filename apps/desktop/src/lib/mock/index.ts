@@ -1,4 +1,4 @@
-import type { Project, Session } from "@ai4s/shared";
+import type { Project, Session } from "@boya/shared";
 import { citationScatter, umapAtlas, umapBySite } from "./figures";
 
 // ---- Session 1: figure canvas + artifact inspector (reference shot 1) ----

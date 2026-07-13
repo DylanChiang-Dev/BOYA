@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { StepSummaryBlock } from "@ai4s/shared";
+import type { StepSummaryBlock } from "@boya/shared";
 import { cn } from "@/lib/cn";
 
 export function StepSummaryRow({ block }: { block: StepSummaryBlock }) {

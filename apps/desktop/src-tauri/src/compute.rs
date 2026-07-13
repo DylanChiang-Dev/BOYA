@@ -4,7 +4,7 @@
 // capabilities (cores, memory, disk, GPUs, optional Slurm), and list/cancel
 // the user's queued Slurm jobs. Submission itself is agent-driven via the
 // bundled `remote-compute` skill; saved machines live in
-// <workspace>/.openscience/compute.json (see compute_machines below).
+// <workspace>/.boya/compute.json (see compute_machines below).
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_shell::ShellExt;
@@ -274,9 +274,9 @@ const COMPUTE_FILE: &str = "compute.json";
 fn compute_path(app: &AppHandle) -> Result<PathBuf, String> {
     // Base workspace, NOT the per-session dated folder: a remote machine is a
     // user-level resource shared across every session. Stored once here; the
-    // agent reaches it from its session folder via `../.openscience/compute.json`
+    // agent reaches it from its session folder via `../.boya/compute.json`
     // (the seeded harness points at it), so no per-session copies are kept.
-    Ok(base_workspace_dir(app)?.join(".openscience").join(COMPUTE_FILE))
+    Ok(base_workspace_dir(app)?.join(".boya").join(COMPUTE_FILE))
 }
 
 /// One SSH round-trip: static identity + a live usage snapshot, one token per
@@ -300,7 +300,7 @@ fn load_machines(app: &AppHandle) -> Result<Vec<Machine>, String> {
         return Ok(parse_machines(&text));
     }
     // Migrate a legacy base-workspace hpc.json exactly once, then remove it.
-    let legacy = base_workspace_dir(app)?.join(".openscience").join("hpc.json");
+    let legacy = base_workspace_dir(app)?.join(".boya").join("hpc.json");
     if let Ok(text) = std::fs::read_to_string(&legacy) {
         let machines = legacy_to_machines(&text);
         save_machines(app, &machines)?;
@@ -311,7 +311,7 @@ fn load_machines(app: &AppHandle) -> Result<Vec<Machine>, String> {
 }
 
 /// Copy the canonical (base-workspace) machine list into the ACTIVE session
-/// workspace's `.openscience/compute.json` so the agent reads it IN-workspace —
+/// workspace's `.boya/compute.json` so the agent reads it IN-workspace —
 /// no `../` (which the agent mis-resolves) and no out-of-workspace permission
 /// prompt. Derived, never user-edited; best-effort. When base has no config,
 /// clears any stale local copy so removals propagate. No-op when the active
@@ -324,8 +324,8 @@ pub(crate) fn materialize_active(app: &AppHandle) {
         return;
     }
     write_materialized(
-        &base.join(".openscience").join(COMPUTE_FILE),
-        &active.join(".openscience"),
+        &base.join(".boya").join(COMPUTE_FILE),
+        &active.join(".boya"),
     );
 }
 
@@ -553,8 +553,8 @@ random junk with no leading token space? nope
         use std::fs;
         let root = std::env::temp_dir().join(format!("os-materialize-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
-        let base_os = root.join("base-openscience");
-        let sess_os = root.join("session-openscience");
+        let base_os = root.join("base-boya");
+        let sess_os = root.join("session-boya");
         fs::create_dir_all(&base_os).unwrap();
         let src = base_os.join("compute.json");
         fs::write(&src, r#"{"machines":[{"host":"h","label":null,"caps":null}]}"#).unwrap();

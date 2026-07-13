@@ -56,7 +56,7 @@
   "skills": {
     "title": "스킬 & 에이전트",
     "description": {
-      "prefix": "OpenCode 런타임에서 실시간으로 로드됩니다 — 내장된 ai4s-skills 팩과 워크스페이스의 ",
+      "prefix": "OpenCode 런타임에서 실시간으로 로드됩니다 — 내장된 Boya 워크플로와 워크스페이스의 ",
       "suffix": " 아래에 있는 모든 항목."
     },
     "install": {

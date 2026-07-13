@@ -1,15 +1,15 @@
 {
-  "name": "ai4s-workbench",
-  "version": "0.1.9",
+  "name": "boya-desktop",
+  "version": "0.1.0",
   "private": true,
-  "description": "Open Science Desktop — local-first, model-agnostic AI research workbench for macOS, Windows and Linux.",
-  "license": "MIT",
+  "description": "Boya Desktop — a local-first AI research workbench for humanities and social sciences.",
+  "license": "UNLICENSED",
   "scripts": {
-    "dev": "pnpm --filter @ai4s/desktop dev",
-    "build": "pnpm --filter @ai4s/desktop build",
-    "test": "pnpm --filter @ai4s/desktop test",
-    "typecheck": "pnpm --filter @ai4s/desktop typecheck",
-    "lint": "pnpm --filter @ai4s/desktop lint"
+    "dev": "pnpm --filter @boya/desktop dev",
+    "build": "pnpm --filter @boya/desktop build",
+    "test": "pnpm --filter @boya/desktop test",
+    "typecheck": "pnpm --filter @boya/desktop typecheck",
+    "lint": "pnpm --filter @boya/desktop lint"
   },
   "engines": {
     "node": ">=20"

@@ -1,5 +1,5 @@
-export const FAVORITES_KEY = "ai4s.models.favorites.v1";
-export const RECENT_KEY = "ai4s.models.recent.v1";
+export const FAVORITES_KEY = "boya.models.favorites.v1";
+export const RECENT_KEY = "boya.models.recent.v1";
 export const RECENT_LIMIT = 8;
 
 export interface ModelPreferences {

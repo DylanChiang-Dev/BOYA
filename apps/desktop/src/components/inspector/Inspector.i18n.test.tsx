@@ -7,7 +7,7 @@ import type {
   NotebookInspector as NotebookInspectorT,
   FilePreviewInspector as FilePreviewInspectorT,
   PdfInspector as PdfInspectorT,
-} from "@ai4s/shared";
+} from "@boya/shared";
 import { useUiStore } from "@/lib/store";
 import { ArtifactInspector } from "./ArtifactInspector";
 import { NotebookInspector } from "./NotebookInspector";

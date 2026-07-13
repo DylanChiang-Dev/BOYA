@@ -50,7 +50,7 @@ mod tests {
 
     #[test]
     fn copies_recursively_but_never_overwrites() {
-        let base = std::env::temp_dir().join(format!("ai4s-example-{}", std::process::id()));
+        let base = std::env::temp_dir().join(format!("boya-example-{}", std::process::id()));
         let src = base.join("src");
         let dst = base.join("dst");
         std::fs::create_dir_all(src.join("data")).unwrap();

@@ -16,7 +16,7 @@ import type {
   ProviderAuthMethod,
   ProviderCatalogEntry,
   ProviderInfo,
-} from "@ai4s/sdk";
+} from "@boya/sdk";
 import { useTranslation } from "react-i18next";
 import { useUiStore } from "@/lib/store";
 import { shippedLocales } from "@/i18n/config";
@@ -41,8 +41,6 @@ import {
   type ProxySetting,
 } from "@/lib/tauri";
 import { useSetupStore } from "@/lib/setup";
-import { RemoteComputeCard } from "@/components/settings/RemoteComputeCard";
-import { ModalCard } from "@/components/settings/ModalCard";
 import { DataFlowCard } from "@/components/settings/DataFlowCard";
 import { ModelBrowser } from "@/components/settings/ModelBrowser";
 import { ProviderManagerCard } from "@/components/settings/ProviderManagerCard";
@@ -60,6 +58,9 @@ export function SettingsPage() {
   const setTheme = useUiStore((s) => s.setTheme);
   const locale = useUiStore((s) => s.locale);
   const setLocale = useUiStore((s) => s.setLocale);
+  const modelAccessMode = useUiStore((s) => s.modelAccessMode);
+  const setModelAccessMode = useUiStore((s) => s.setModelAccessMode);
+  const developerMode = modelAccessMode === "developer-byok";
   const { t } = useTranslation(["settings", "common"]);
   // Select each field individually. A bare `useRuntimeStore()` subscribed to the
   // WHOLE store, so every unrelated mutation (session events, streaming, idle
@@ -544,7 +545,7 @@ export function SettingsPage() {
               )}
             />
             <span className="capitalize">{status}</span>
-            {connected && defaultModel && (
+            {developerMode && connected && defaultModel && (
               <>
                 <span className="text-border">·</span>
                 <span className="font-mono">{defaultModel}</span>
@@ -600,7 +601,37 @@ export function SettingsPage() {
           )}
         </Card>
 
-        {/* ---- Models ---- */}
+        <Card title={t("modelAccess.title")} hint={t("modelAccess.hint")}>
+          <div className="flex items-center justify-between gap-4 rounded-input border border-border bg-surface-2 px-3 py-3">
+            <div>
+              <div className="text-[13px] font-medium text-text">{t("modelAccess.cloudTitle")}</div>
+              <p className="mt-0.5 text-xs leading-relaxed text-muted">{t("modelAccess.cloudDescription")}</p>
+            </div>
+            <span className="shrink-0 rounded bg-surface px-2 py-1 text-[10px] font-medium uppercase text-muted ring-1 ring-border">
+              {t("modelAccess.comingSoon")}
+            </span>
+          </div>
+          <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-[13px] text-text">
+            <input
+              type="checkbox"
+              checked={developerMode}
+              onChange={(event) =>
+                setModelAccessMode(event.target.checked ? "developer-byok" : "boya-cloud")
+              }
+              className="mt-0.5 size-4 accent-[var(--accent)]"
+            />
+            <span>
+              <span className="font-medium">{t("modelAccess.developerTitle")}</span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-muted">
+                {t("modelAccess.developerDescription")}
+              </span>
+            </span>
+          </label>
+        </Card>
+
+        {developerMode && (
+          <>
+        {/* ---- Models: developer BYOK only ---- */}
         <Card title={t("model.title")} hint={t("model.hint")}>
           {!modelSurfaceAvailable ? (
             <p className="text-[13px] text-muted">{t("model.connectPrompt")}</p>
@@ -869,6 +900,8 @@ export function SettingsPage() {
             </>
           )}
         </ProviderManagerCard>
+          </>
+        )}
 
         {/* ---- MCP servers ---- */}
         <Card title={t("mcp.title")} hint={t("mcp.hint")}>
@@ -1143,12 +1176,8 @@ export function SettingsPage() {
           </Card>
         )}
 
-        <RemoteComputeCard />
-
-        <ModalCard />
-
         {/* ---- Privacy & data flow ---- */}
-        <DataFlowCard model={defaultModel} workspace={wsPath} />
+        <DataFlowCard model={developerMode ? defaultModel : null} workspace={wsPath} />
 
         {/* ---- Appearance ---- */}
         <Card title={t("appearance.title")}>
@@ -1301,6 +1330,17 @@ export function SettingsPage() {
             </label>
           </div>
           <p className="mt-3 text-xs leading-relaxed text-muted">{t("updates.privacy")}</p>
+        </Card>
+
+        <Card title={t("about.title")}>
+          <p className="text-xs leading-relaxed text-muted">{t("about.attribution")}</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted">{t("about.licenseNotice")}</p>
+          <button
+            className={btnGhost("mt-3 gap-1.5")}
+            onClick={() => void openExternal("https://github.com/ai4s-research/open-science")}
+          >
+            <ExternalLink size={13} /> {t("about.upstreamSource")}
+          </button>
         </Card>
       </div>
     </div>

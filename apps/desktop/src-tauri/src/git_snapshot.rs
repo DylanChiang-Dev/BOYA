@@ -15,7 +15,7 @@ fn git_lock() -> &'static Mutex<()> {
     LOCK.get_or_init(|| Mutex::new(()))
 }
 
-const AUTHOR_NAME: &str = "Open Science Desktop";
+const AUTHOR_NAME: &str = "Boya Desktop";
 const AUTHOR_EMAIL: &str = "open-science-desktop@local";
 
 fn git(root: &Path) -> std::process::Command {
@@ -60,7 +60,7 @@ fn run(root: &Path, args: &[&str]) -> Result<(), String> {
 /// is how we recognize an app-managed repo that is safe to `add -A`/commit into;
 /// we never touch a git repository the user brought into the workspace himself.
 fn snapshot_marker(root: &Path) -> PathBuf {
-    root.join(".git").join(".openscience-snapshots")
+    root.join(".git").join(".boya-snapshots")
 }
 
 /// Ensure an app-owned snapshot repo exists. Returns `Ok(false)` when the folder

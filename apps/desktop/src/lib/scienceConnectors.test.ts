@@ -18,21 +18,9 @@ describe("connectorConfig", () => {
     expect(cfg.type === "local" && cfg.environment).toBeUndefined();
   });
 
-  it("keeps a module connector's extra args (biomcp run)", () => {
-    const cfg = connectorConfig(byId("biomcp"), "/env/bin/python");
-    expect(cfg.type === "local" && cfg.command).toEqual([
-      "/env/bin/python",
-      "-m",
-      "biomcp",
-      "run",
-    ]);
-  });
-
-  it("launches a console-script connector beside the interpreter (unix)", () => {
-    const cfg = connectorConfig(byId("materials-project"), "/env/bin/python");
-    expect(cfg.type === "local" && cfg.command).toEqual([
-      "/env/bin/mcp-materials-project",
-    ]);
+  it("launches FRED beside the interpreter (unix)", () => {
+    const cfg = connectorConfig(byId("fred"), "/env/bin/python");
+    expect(cfg.type === "local" && cfg.command).toEqual(["/env/bin/fred-mcp"]);
   });
 
   it("resolves the console script on Windows with .exe", () => {
@@ -43,8 +31,8 @@ describe("connectorConfig", () => {
   });
 
   it("passes an API key via environment, trimmed", () => {
-    const cfg = connectorConfig(byId("materials-project"), "/env/bin/python", "  mp-secret  ");
-    expect(cfg.type === "local" && cfg.environment).toEqual({ MP_API_KEY: "mp-secret" });
+    const cfg = connectorConfig(byId("fred"), "/env/bin/python", "  fred-secret  ");
+    expect(cfg.type === "local" && cfg.environment).toEqual({ FRED_API_KEY: "fred-secret" });
   });
 
   it("omits environment when the key is blank", () => {
@@ -60,36 +48,10 @@ describe("connectorConfig", () => {
     }
   });
 
-  it("ships at least two non-bio disciplines (P1-2 breadth)", () => {
-    const disciplines = new Set(SCIENCE_CONNECTORS.map((c) => c.discipline));
-    expect(disciplines.has("materials")).toBe(true);
-    expect(disciplines.has("economics")).toBe(true);
-  });
-
-  it("covers physics and earth/climate — the two previously-empty disciplines", () => {
-    const disciplines = new Set(SCIENCE_CONNECTORS.map((c) => c.discipline));
-    expect(disciplines.has("physics")).toBe(true);
-    expect(disciplines.has("earth/climate")).toBe(true);
-  });
-
-  it("launches the space-weather connector as a console script (physics)", () => {
-    const cfg = connectorConfig(byId("spaceweather"), "/env/bin/python");
-    expect(cfg.type === "local" && cfg.command).toEqual(["/env/bin/spaceweather-mcp"]);
-  });
-
-  it("launches Open-Meteo weather as a `-m module` connector (earth, no key)", () => {
-    const c = byId("open-meteo");
-    expect(c.apiKeyEnv).toBeUndefined(); // Open-Meteo is free, no key
-    const cfg = connectorConfig(c, "/env/bin/python");
-    expect(cfg.type === "local" && cfg.command).toEqual([
-      "/env/bin/python",
-      "-m",
-      "mcp_weather_server",
+  it("exposes only the humanities and social-science connector allowlist", () => {
+    expect(SCIENCE_CONNECTORS.map((connector) => connector.id)).toEqual([
+      "paper-search",
+      "fred",
     ]);
-  });
-
-  it("launches USGS water data as a console script (earth, no key)", () => {
-    const cfg = connectorConfig(byId("usgs-water"), "/env/bin/python");
-    expect(cfg.type === "local" && cfg.command).toEqual(["/env/bin/usgs-mcp"]);
   });
 });

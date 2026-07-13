@@ -9,9 +9,24 @@
   "language": {
     "label": "Language"
   },
+  "about": {
+    "title": "About",
+    "attribution": "Boya Desktop is based on Open Science Desktop and retains its original MIT license and contributor history.",
+    "licenseNotice": "The original license and third-party notices are included with the application.",
+    "upstreamSource": "View upstream source"
+  },
   "page": {
     "title": "Settings",
     "subtitle": "Everything here configures the bundled OpenCode runtime — one config, no copies."
+  },
+  "modelAccess": {
+    "title": "Model access",
+    "hint": "Boya will provide one research model entry point without manual model switching",
+    "cloudTitle": "Boya Cloud",
+    "cloudDescription": "A managed research model with transparent routing and traceable usage.",
+    "comingSoon": "Coming soon",
+    "developerTitle": "Developer BYOK",
+    "developerDescription": "Use your own provider credentials for development and local testing."
   },
   "runtime": {
     "title": "Agent runtime",

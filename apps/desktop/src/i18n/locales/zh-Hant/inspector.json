@@ -1,0 +1,260 @@
+{
+  "shell": {
+    "maximizePanel": "最大化面板",
+    "restorePanel": "恢復面板",
+    "closeInspector": "關閉檢查器"
+  },
+  "artifact": {
+    "previousVersionAria": "上一個版本",
+    "nextVersionAria": "下一個版本",
+    "downloadAria": "下載",
+    "downloadScript": "下載腳本",
+    "inputsLabel": "輸入",
+    "noExecutionLog": "無執行日誌。",
+    "noMessages": "此版本沒有消息。",
+    "noEnvironmentInfo": "無環境信息。",
+    "reviewPassed": "審查通過 — {{version}} 可追溯到代碼和輸入。",
+    "reviewNotPassed": "{{version}} 尚未通過審查。",
+    "tabs": {
+      "Code": "代碼",
+      "Execution Log": "執行日誌",
+      "Messages": "消息",
+      "Environment": "環境",
+      "Review": "審查"
+    }
+  },
+  "notebook": {
+    "title": "筆記本",
+    "sharedWithAgent": "與代理共享",
+    "live": "實時",
+    "outputLabel": "> 輸出",
+    "running": "運行中…",
+    "sentToKernel": "→ 已發送到代理的內核",
+    "localOnly": "（本地內核僅在桌面應用中可用）",
+    "kernelError": "內核錯誤：{{message}}",
+    "exprPlaceholder": "輸入表達式並按 Enter",
+    "exprAria": "筆記本表達式",
+    "runAria": "運行表達式"
+  },
+  "provenance": {
+    "loadingHistory": "正在加載歷史記錄…",
+    "emptyPrefix": "尚無記錄的版本。每次代理寫入",
+    "emptySuffix": "，都會在此添加一個包含代碼、模型和對話的新版本。",
+    "envTitle": "生成此版本時所用的環境",
+    "lockfileTitle": "查看此版本捕獲的 pip freeze 鎖定文件",
+    "packageCount_other": "{{count}} 個軟件包",
+    "pipFreezePrefix": "pip freeze · ",
+    "reproduce": "復現",
+    "reproduceRunTitle": "起草一個提示，重新運行此文件的運行並比較輸出",
+    "reproduceVersionTitle": "起草一個提示，重新運行此版本的代碼並比較結果",
+    "openConversation": "打開對話",
+    "openConversationTitle": "打開產生此版本的對話",
+    "loadingLockfile": "正在加載…",
+    "openRunTitle": "在“運行”視圖中打開此運行",
+    "producedByRunPrefix": "由運行產生",
+    "commandSeparator": " — ",
+    "producedByRunSuffix": "。此文件是運行代碼的輸出；“復現”會重新運行該命令並比較結果。",
+    "contentNotCaptured": "此版本的內容未被捕獲（可能是二進制寫入，或僅記錄了差異的編輯）。"
+  },
+  "filePreview": {
+    "historyAria": "歷史記錄",
+    "historyTitle": "歷史記錄 — 每個記錄的版本及其代碼和對話",
+    "openExternally": "在外部打開",
+    "openExternallyTitle": "在默認應用中打開",
+    "tabs": {
+      "preview": "預覽",
+      "code": "代碼"
+    },
+    "loading": "正在加載 {{filename}}…",
+    "desktopOnly": "預覽功能在桌面應用中可用。",
+    "sourceDesktopOnly": "源代碼在桌面應用中可用。",
+    "binaryNoPreview": "此文件為二進制文件，無法預覽——請在外部打開。",
+    "artifactKind": {
+      "figure": "圖表",
+      "script": "腳本",
+      "report": "報告",
+      "table": "表格",
+      "notebook": "筆記本",
+      "model": "模型",
+      "data": "數據"
+    },
+    "htmlPreviewTitle": "HTML 預覽",
+    "pdfPreviewTitle": "PDF 預覽",
+    "tableView": {
+      "table": "表格",
+      "chart": "圖表"
+    },
+    "tooLarge": "{{filename}} 過大，無法預覽",
+    "tooLargeBody": "預覽有大小限制，以避免大文件導致應用卡死。您可以無需加載即可檢查——大文件探測器會通過流式讀取獲取其結構、形狀、樣本和關鍵數值，從不加載整個文件——或在系統應用中打開它。",
+    "inspectWithoutLoading": "無需加載即可檢查",
+    "pointer": {
+      "format": "格式",
+      "size": "大小",
+      "gzipped": "（已 gzip 壓縮）",
+      "approxRows": "行數（約）",
+      "rows": "行數",
+      "approxReads": "讀段數（約）",
+      "approxSequences": "序列數（約）",
+      "approxVariants": "變異數（約）",
+      "columns": "列數",
+      "readLength": "讀長",
+      "readLengthValue": "{{min}}–{{max}}（平均 {{mean}}）",
+      "samples": "樣本",
+      "schema": "結構",
+      "datasets": "數據集",
+      "sampleIds": "樣本 ID"
+    }
+  },
+  "office": {
+    "rendering": "正在渲染…",
+    "docxRenderError": "無法渲染此文檔：{{message}}",
+    "xlsxReadError": "無法讀取此工作簿：{{message}}",
+    "pptxRenderError": "無法渲染此演示文稿：{{message}}",
+    "noSheets": "此工作簿沒有工作表。",
+    "truncatedPrefix": "已截斷預覽 · ",
+    "embeddedChartsNote": "嵌入的圖表未被渲染。"
+  },
+  "table": {
+    "showingFirstRows_other": "顯示前 {{count}} 行"
+  },
+  "mesh": {
+    "mode": {
+      "shaded": "著色",
+      "wireframe": "線框"
+    },
+    "modelViewerAria": "{{filename}} 三維模型查看器",
+    "resetView": "重置視圖",
+    "triangleCount_other": "{{formatted}} 個三角形",
+    "rendering": "正在渲染模型…",
+    "fileProblem": "文件問題",
+    "noGeometry": "此三維文件沒有可見幾何體——導出內容似乎不完整或已損壞。",
+    "unsupportedFormat": "不支持的三維格式：.{{ext}}",
+    "badge3D": "三維"
+  },
+  "fits": {
+    "readError": "無法讀取此 FITS 文件 — {{error}}。",
+    "colormap": {
+      "magma": "magma",
+      "viridis": "viridis",
+      "gray": "gray"
+    },
+    "stretch": {
+      "linear": "線性",
+      "log": "對數",
+      "asinh": "asinh"
+    },
+    "hoverHintImage": "懸停查看像素值和天球坐標",
+    "pixelValue": "像素 ({{x}}, {{y}}) = {{value}}",
+    "value": "數值",
+    "axisSampleFallback": "樣本",
+    "spectrumSummary_other": "光譜 · {{count}} 個樣本",
+    "hoverHintSpectrum": "懸停查看樣本"
+  },
+  "genome": {
+    "notAnnotationFile": "不是基因組注釋文件。",
+    "noFeaturesFound": "此 {{format}} 文件中未找到特徵。",
+    "contigAria": "重疊群",
+    "featureCount": "{{count}} 個特徵",
+    "zoomIn": "放大",
+    "zoomOut": "縮小",
+    "resetView": "重置視圖",
+    "strandLabel": "鏈 {{strand}}",
+    "featureLabel": "特徵",
+    "scoreLabel": "分數 {{score}}",
+    "panZoomHint": "拖動以平移 · 滾動以縮放",
+    "showingRows": " · 顯示 {{total}} 行中的 {{shown}} 行",
+    "truncatedNotice": " · 文件已截斷至 50,000 個特徵"
+  },
+  "molecule": {
+    "style": {
+      "stick": "棒狀",
+      "sphere": "球狀",
+      "cartoon": "卡通"
+    },
+    "moleculeViewerAria": "{{filename}} 三維分子查看器",
+    "notChemicalFile": "不是化學結構文件。",
+    "noStructuresFound": "此文件中未找到化學結構。",
+    "resetView": "重置視圖",
+    "atomCount_other": "{{count}} 個原子",
+    "renderingStructure": "正在渲染結構…",
+    "badge3D": "三維"
+  },
+  "dos": {
+    "readError": "無法讀取此 DOSCAR 文件 — {{error}}。",
+    "unknownFormat": "未知格式",
+    "viewLabel": "DOS",
+    "pointCount_other": "{{count}} 個點",
+    "spinPolarizedSuffix": " · 自旋極化",
+    "axisToggle": {
+      "relative": "E − E_F",
+      "absolute": "絕對能量"
+    },
+    "axisLabel": {
+      "relative": "E − E_F (eV)",
+      "absolute": "能量 (eV)"
+    },
+    "yAxisLabel": "DOS (states/eV)",
+    "spinUpLabel": "↑ 自旋向上",
+    "spinDownLabel": "↓ 自旋向下",
+    "emptyHint": "費米能級位於 E_F · 懸停查看數據點"
+  },
+  "band": {
+    "readError": "無法讀取此 EIGENVAL 文件 — {{error}}。",
+    "unknownFormat": "未知格式",
+    "viewLabel": "能帶",
+    "bandCount_other": "{{count}} 條能帶",
+    "kpointCount_other": "{{count}} 個 k 點",
+    "spinPolarizedSuffix": " · 自旋極化",
+    "spinUpShort": "上",
+    "spinDownShort": "下",
+    "kpointIndexAxis": "k 點索引 (0…{{max}})",
+    "energyAxis": "能量 (eV)",
+    "hoverHint": "懸停查看 k 點和能量"
+  },
+  "phase": {
+    "readError": "無法讀取此相圖 — {{error}}。",
+    "unknownFormat": "未知格式",
+    "phaseCount_other": "{{count}} 個相",
+    "stableCount": "{{count}} 個穩定相",
+    "xAxisLabel": "組成（{{element}} 分數）",
+    "yAxisLabel": "形成能 (eV/atom)",
+    "stableOnHull": "穩定（位於凸包上）",
+    "aboveHull": "高於凸包 +{{value}} eV/atom",
+    "hoverDefaultHint": "懸停查看相 · 實心 = 穩定，空心 = 亞穩定"
+  },
+  "anomaly": {
+    "readError": "無法讀取此異常網格 — {{error}}。",
+    "unknownFormat": "未知格式",
+    "gridLabel": "網格",
+    "hoverHint": "懸停查看網格單元",
+    "noData": "無數據"
+  },
+  "qcode": {
+    "readError": "無法讀取此編碼文件 — {{error}}。",
+    "unknownFormat": "未知格式",
+    "sourceCount_other": "{{count}} 個來源",
+    "codeCount_other": "{{count}} 個編碼",
+    "exactSpansBadge": "引用為精確的原文片段",
+    "exactSpansTitle": "高亮內容為精確的原文片段——引文均從原文中切取，絕非生成。",
+    "codebookHeading": "編碼手冊",
+    "clearFilter": "清除篩選",
+    "warningsCount_other": "{{count}} 條注釋被跳過或標記：",
+    "hoverDefaultHint": "懸停高亮內容查看其編碼 · 點擊編碼以單獨查看其片段"
+  },
+  "tableChart": {
+    "chartType": {
+      "line": "折線圖",
+      "bar": "柱狀圖",
+      "scatter": "散點圖"
+    },
+    "rowIndexOption": "行號",
+    "rowLabel": "行",
+    "xAxisFieldLabel": "x：",
+    "toggleSeries": {
+      "hide": "隱藏序列",
+      "show": "顯示序列"
+    },
+    "selectSeriesHint": "選擇一個序列進行繪圖",
+    "noNumericColumns": "沒有可繪制的數值列。"
+  }
+}

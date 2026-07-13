@@ -40,7 +40,7 @@ venv/
 docs/superpowers/
 
 # Local runtime & secrets (never commit)
-.ai4s-workbench/
+.boya-desktop/
 secrets/
 *.key
 .env

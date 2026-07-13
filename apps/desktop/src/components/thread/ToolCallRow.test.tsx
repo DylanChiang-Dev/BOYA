@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { ToolCallStatus } from "@ai4s/shared";
+import type { ToolCallStatus } from "@boya/shared";
 import { ToolCallRow } from "./ToolCallRow";
 
 const STATUSES: [ToolCallStatus, string][] = [

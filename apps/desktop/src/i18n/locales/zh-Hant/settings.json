@@ -1,0 +1,259 @@
+{
+  "appearance": {
+    "title": "外觀",
+    "theme": {
+      "light": "淺色",
+      "dark": "深色"
+    }
+  },
+  "language": {
+    "label": "語言"
+  },
+  "about": {
+    "title": "關於",
+    "attribution": "Boya Desktop 以 Open Science Desktop 為基礎，並保留原始 MIT 授權與貢獻者歷史。",
+    "licenseNotice": "應用程式內已附原始授權及第三方聲明。",
+    "upstreamSource": "查看上游原始碼"
+  },
+  "page": {
+    "title": "設置",
+    "subtitle": "此處的所有設置都配置內置的 OpenCode 運行時——一份配置，無需重復。"
+  },
+  "modelAccess": {
+    "title": "模型存取",
+    "hint": "Boya 將提供統一的研究模型入口，無需手動切換模型",
+    "cloudTitle": "Boya Cloud",
+    "cloudDescription": "提供透明路由與可追溯用量的託管研究模型。",
+    "comingSoon": "即將推出",
+    "developerTitle": "開發者 BYOK",
+    "developerDescription": "使用自己的模型服務憑證進行開發與本機測試。"
+  },
+  "runtime": {
+    "title": "代理運行時",
+    "hint": "opencode serve，通過其 HTTP + SSE API 驅動",
+    "connect": "連接",
+    "disconnect": "斷開連接",
+    "serverUrlPlaceholder": "http://127.0.0.1:4096",
+    "proxyLabel": "網絡代理",
+    "proxySystem": "跟隨系統",
+    "proxyCustom": "自定義…",
+    "proxyNone": "直連(不使用代理)",
+    "proxyPlaceholder": "http://127.0.0.1:7890 / socks5://host:port",
+    "proxyDirectHint": "Agent 運行時的所有連接均為直連。",
+    "proxyEffective": "經由 {{url}} 轉發",
+    "proxyNoneDetected": "未檢測到系統代理——連接將直連。"
+  },
+  "updates": {
+    "title": "應用更新",
+    "hint": "通過 GitHub Releases 檢查更新，24 小時內最多自動檢查一次",
+    "available": "有新版本",
+    "checking": "檢查中",
+    "failed": "檢查失敗",
+    "upToDate": "已是最新",
+    "currentVersion": "當前版本：{{version}}",
+    "latestVersion": "最新版本：{{version}}",
+    "publishedAt": "發佈時間：{{date}}",
+    "lastChecked": "上次檢查：{{date}}",
+    "checkFailed": "檢查失敗：{{message}}",
+    "checkNow": "立即檢查",
+    "openRelease": "打開發佈頁",
+    "hideBadge": "隱藏紅點",
+    "autoCheck": "自動檢查更新",
+    "autoCheckHint": "默認開啓。應用每天最多自動檢查一次。",
+    "showBadge": "在設置入口顯示紅點",
+    "showBadgeHint": "發現新版本時，在設置入口顯示紅點提醒。",
+    "privacy": "僅訪問公開的 GitHub Releases API。不會發送工作區文件或 API 密鑰。"
+  },
+  "model": {
+    "title": "模型",
+    "hint": "下方的供應商提供可在此選擇的模型",
+    "connectPrompt": "連接運行時以配置模型。",
+    "notSet": "未設置——選擇一個默認模型",
+    "providersDivider": "供應商",
+    "filtersLabel": "模型篩選",
+    "allModels": "全部模型",
+    "favorites": "收藏",
+    "recent": "最近使用",
+    "searchLabel": "搜索模型",
+    "searchPlaceholder": "按模型、ID 或供應商搜索",
+    "listLabel": "可用模型",
+    "currentDefault": "當前默認",
+    "switching": "切換中…",
+    "unavailableDefault": "已配置的模型不可用：{{model}}",
+    "catalogUnavailable": "模型目錄當前不可用。",
+    "catalogLoading": "正在加載模型目錄…",
+    "noModels": "沒有可用模型。",
+    "manageProviders": "管理供應商",
+    "emptyFavorites": "收藏的模型會顯示在這裡。",
+    "emptyRecent": "成功選擇過的模型會顯示在這裡。",
+    "noResults": "沒有模型匹配“{{query}}”。",
+    "clearSearch": "清除搜索",
+    "addFavorite": "將 {{model}} 添加到收藏",
+    "removeFavorite": "從收藏中移除 {{model}}"
+  },
+  "providers": {
+    "title": "供應商",
+    "hint": "登錄認證、自定義端點和導入的 OpenCode 登錄信息",
+    "connectPrompt": "連接運行時以管理提供商。",
+    "manage": "管理",
+    "collapse": "收起",
+    "connectedSummary_one": "已連接 {{count}} 個：{{names}}",
+    "connectedSummary_other": "已連接 {{count}} 個：{{names}}",
+    "noneConnected": "未連接供應商",
+    "modelCount_other": "{{count}} 個模型",
+    "builtInFree": "內置 · 免費",
+    "removeTitle": "移除該供應商的憑據/配置",
+    "searchPlaceholder": "連接供應商 — 搜索 {{count}} 個（anthropic、openrouter、deepseek…）",
+    "apiKeyLabel": "API 密鑰",
+    "completeLogin": "完成登錄",
+    "waitingForBrowser": "等待您在瀏覽器中完成操作…",
+    "pasteCode": "粘貼瀏覽器中的代碼",
+    "customEndpoint": "自定義端點",
+    "customEndpointHint": "自托管 · 本地 Ollama · 兼容 OpenAI/Anthropic",
+    "customNamePlaceholder": "名稱 — 例如 Ollama、My DeepSeek gateway",
+    "openaiCompatible": "兼容 OpenAI",
+    "anthropicCompatible": "兼容 Anthropic",
+    "customUrlPlaceholder": "基礎 URL — Ollama：http://127.0.0.1:11434/v1",
+    "customKeyPlaceholder": "API 密鑰 — 可選，Ollama 不需要",
+    "customModelsPlaceholder": "模型 ID，以逗號分隔",
+    "addEndpoint": "添加端點",
+    "importLogin": "已經在使用 OpenCode CLI？導入其登錄信息"
+  },
+  "mcp": {
+    "title": "MCP 服務器",
+    "hint": "為代理提供額外工具（Model Context Protocol）——例如 Jupyter 或瀏覽器 MCP",
+    "connectPrompt": "連接運行時以配置 MCP 服務器。",
+    "openSource": "開源",
+    "enterKeyFirstTitle": "請先輸入 API 密鑰",
+    "settingUp": "正在設置…",
+    "enable": "啓用",
+    "freeKeySuffix": "（免費密鑰）",
+    "getFreeKey": "獲取免費密鑰",
+    "jupyterLabel": "Jupyter",
+    "jupyterDescription": "讓代理驅動真實的筆記本 · 獨立環境，內置 numpy·pandas·matplotlib，首次運行約 500 MB · 設置完成後，應用內的“運行”按鈕也會使用它，因此您和代理共用同一個 Python 環境",
+    "setUpAndEnable": "設置並啓用",
+    "startingDownload": "開始下載…",
+    "typeLocal": "本地",
+    "typeRemote": "遠程",
+    "namePlaceholder": "名稱 — 例如 jupyter、playwright",
+    "commandPlaceholder": "命令 — 例如 npx -y @playwright/mcp",
+    "urlPlaceholder": "URL — 例如 https://example.com/mcp",
+    "addServer": "添加服務器"
+  },
+  "workspace": {
+    "title": "工作區",
+    "hint": "本地優先——每個會話都在此創建的獨立日期子文件夾中工作",
+    "unavailable": "該功能在桌面應用中可用",
+    "change": "更改…",
+    "reveal": "在文件管理器中顯示"
+  },
+  "python": {
+    "title": "本地 Python 內核",
+    "hint": "在應用內運行筆記本單元格。若已設置 Jupyter 環境則使用它（與代理共用同一 Python），否則自動檢測——或在下方指定解釋器",
+    "sourceManual": "手動",
+    "sourceAppManaged": "應用管理",
+    "sourceAutoDetected": "自動檢測",
+    "checking": "檢查中…",
+    "pathPlaceholder": "解釋器路徑 — 例如 /opt/anaconda3/bin/python3 或 C:\\ProgramData\\anaconda3\\python.exe",
+    "useThisPython": "使用此 Python",
+    "clearOverride": "清除覆蓋設置"
+  },
+  "toast": {
+    "interpreterSet": "解釋器已設置——筆記本單元格現在將在其上運行。",
+    "overrideCleared": "覆蓋設置已清除。",
+    "couldNotSetInterpreter": "無法設置解釋器",
+    "folderSet": "新會話將在此文件夾中創建。",
+    "couldNotSetFolder": "無法設置文件夾",
+    "couldNotSetModel": "無法設置模型",
+    "defaultModelSet": "默認模型已設置為 {{model}}",
+    "couldNotSaveKey": "無法保存密鑰",
+    "providerConnected": "{{providerID}} 已連接",
+    "couldNotStartLogin": "無法開始登錄",
+    "loginDidNotComplete": "登錄未完成",
+    "couldNotRemove": "無法移除",
+    "providerRemoved": "{{providerID}} 已移除",
+    "couldNotAddEndpoint": "無法添加端點",
+    "endpointFieldsRequired": "名稱、基礎 URL 和至少一個模型 ID 為必填項。",
+    "endpointAdded": "{{name}} 已添加——其模型現在可在上方選擇。",
+    "couldNotAddMcp": "無法添加 MCP 服務器",
+    "mcpFieldsRequired": "名稱和命令/URL 為必填項。",
+    "mcpAdded": "MCP 服務器 {{name}} 已添加",
+    "couldNotRemoveMcp": "無法移除 MCP 服務器",
+    "mcpRemoved": "MCP 服務器 {{name}} 已移除",
+    "importFailed": "導入失敗",
+    "noOpenCodeLoginFound": "在此計算機上未找到 OpenCode CLI 登錄信息。",
+    "importedLogin": "已導入您的 OpenCode CLI 登錄信息。",
+    "couldNotSetProxy": "無法應用代理設置",
+    "proxyApplied": "代理設置已生效"
+  },
+  "dataFlow": {
+    "title": "隱私與數據流",
+    "subtitle": "哪些數據留在本機，哪些數據會離開本機——一目瞭然。",
+    "local": {
+      "heading": "留在本機",
+      "workspaceFiles": "您的工作區文件和原始數據",
+      "codeExecution": "代碼執行——Python 內核和 Jupyter 均在本地運行；數據集在此處處理，從不批量上傳。",
+      "sessionHistory": "會話歷史和溯源記錄，存儲在應用的私有數據文件夾中。",
+      "providerKeys": "供應商密鑰和登錄令牌——存儲於僅您本人賬戶可讀的應用私有文件中；從不寫入工作區、溯源記錄、日誌或導出內容。"
+    },
+    "remote": {
+      "heading": "發送給您的模型供應商",
+      "noModel": "未配置模型",
+      "messages": "您的消息，以及代理為完成您所請求的任務而讀取的文件內容/命令輸出。",
+      "notBackground": "不會在後台發送任何數據——數據僅在對話輪次中發送。",
+      "providerPolicy": "供應商保留的數據受其自身數據政策約束。"
+    },
+    "skillsHint": "您添加的技能和 MCP 服務器可能會發出自己的網絡請求——安裝前請先審查。"
+  },
+  "modal": {
+    "title": "雲計算（Modal）",
+    "subtitle": "使用您自己的賬戶在 Modal 上運行 GPU / 彈性任務——之後只需詢問代理即可。",
+    "recheck": "重新檢查",
+    "unavailable": "該功能在桌面應用中可用。",
+    "ready": "已就緒",
+    "installedNotAuthenticated": "已安裝，未認證",
+    "notInstalled": "未安裝",
+    "readyHint": {
+      "prefix": "讓代理在 Modal 上運行繁重任務——它會使用",
+      "suffix": "技能和您的令牌。"
+    }
+  },
+  "remoteCompute": {
+    "title": "遠程計算",
+    "subtitle": "通過 SSH 在您自己的服務器上運行任務——CPU 或 GPU 均可；Slurm 為可選項。使用您自己的 SSH 密鑰；不會在該機器上安裝任何內容。",
+    "unavailable": "該功能在桌面應用中可用。",
+    "empty": "尚無機器——請在下方添加。",
+    "hostPlaceholderWithHosts": "user@host — 或從您的 ~/.ssh/config 中選擇（{{count}}）",
+    "hostPlaceholder": "user@host.example.edu",
+    "add": "添加",
+    "adding": "正在添加…",
+    "collapse": "收起",
+    "expand": "展開",
+    "checking": "檢查中…",
+    "unreachable": "無法連接",
+    "reprobeTitle": "重新檢測此機器",
+    "removeTitle": "移除此機器",
+    "chips": {
+      "cores_other": "{{count}} 個核心",
+      "diskFree": "剩餘 {{size}}",
+      "gpuHomogeneous": "{{count}}× {{name}}",
+      "gpuMixed": "{{count}} 個 GPU",
+      "slurmPrefix": "Slurm "
+    },
+    "usage": {
+      "cpuLoad": "CPU 負載",
+      "memory": "內存",
+      "disk": "磁盤"
+    },
+    "slurm": {
+      "readingQueue": "正在讀取隊列…",
+      "queueUnavailable": "隊列不可用。",
+      "noJobs": "隊列中沒有任務。",
+      "cancelJob": "取消任務 {{id}}"
+    },
+    "toast": {
+      "couldNotCancel": "無法取消 {{id}}",
+      "jobCanceled": "任務 {{id}} 已取消"
+    }
+  }
+}

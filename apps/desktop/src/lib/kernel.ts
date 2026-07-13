@@ -1,6 +1,6 @@
 // Bridge to the local Python kernel (desktop only). In a plain browser these are
 // no-ops so the app still runs in `pnpm dev`; the notebook then shows a hint.
-import type { FileRoot } from "@ai4s/shared";
+import type { FileRoot } from "@boya/shared";
 import { isTauri } from "./tauri";
 
 export interface ExecResult {

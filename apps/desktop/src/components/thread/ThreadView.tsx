@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { Session } from "@ai4s/shared";
+import type { Session } from "@boya/shared";
 import { BlockList } from "./BlockList";
 
 export function ThreadView({ session }: { session: Session }) {

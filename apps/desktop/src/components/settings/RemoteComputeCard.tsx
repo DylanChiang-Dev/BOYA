@@ -27,7 +27,7 @@ type TFn = TFunction<["settings", "common"]>;
  * Remote compute over SSH. Connect any machine you can SSH to (CPU or GPU;
  * Slurm optional). Each machine shows capability chips and an expandable
  * detail: a usage snapshot (non-Slurm) or the Slurm queue (Slurm). The chosen
- * host is recorded in .openscience/compute.json for the remote-compute skill.
+ * host is recorded in .boya/compute.json for the remote-compute skill.
  */
 export function RemoteComputeCard() {
   const { t } = useTranslation(["settings", "common"]);

@@ -40,6 +40,8 @@
     "runtime": "ランタイム",
     "model": "モデル",
     "modelNotSet": "未設定",
+    "boyaCloud": "Boya Cloud",
+    "comingSoon": "近日公開",
     "values": {
       "ready": "準備完了",
       "connecting": "接続中",
@@ -53,8 +55,8 @@
     "noResults": "結果がありません。",
     "actions": {
       "newSession": "新規セッション",
-      "analyzeData": "データを分析する（新しいワークフロー）",
-      "auditReport": "レポートを検証する（トレーサビリティレビュー）",
+      "analyzeData": "Boya で研究を続ける",
+      "auditReport": "参考文献を確認する",
       "openNotebooks": "ノートブックを開く",
       "manageSkills": "スキルを管理",
       "openSettings": "設定を開く",

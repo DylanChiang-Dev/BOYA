@@ -62,26 +62,23 @@
   },
   "starters": {
     "newSession": "New session",
-    "heading": "What should we look into?",
-    "subheading": "Describe your analysis below — or start from one of these.",
-    "demo": {
-      "title": "Run a demo analysis, end to end",
-      "description": "Simulate a dataset, fit a model, and produce a figure and a traceable report."
+    "heading": "Where are you in your research?",
+    "subheading": "Start with Boya, or choose one focused task.",
+    "boya": {
+      "title": "Continue with Boya",
+      "description": "Locate your stage, complete one focused step, and stop at your next decision."
     },
-    "analyze": {
-      "title": "Analyze my data",
-      "description": "Point the agent at a file you added; get figures and a report back."
+    "question": {
+      "title": "Refine a research question",
+      "description": "Turn a broad interest into bounded options without giving away the final choice."
     },
-    "audit": {
-      "title": "Audit a report for traceability",
-      "description": "Check citations, unsourced numbers, and figure-versus-code consistency."
+    "references": {
+      "title": "Verify a reference list",
+      "description": "Check every entry against real sources and keep uncertain records pending."
     },
-    "example-climate": {
-      "title": "Explore an example: climate trends",
-      "description": "Real NASA GISTEMP data — trend, decadal comparison, figure, and report."
-    },
-    "error": {
-      "setup": "Could not set up the example: {{message}}"
+    "review": {
+      "title": "Review a manuscript",
+      "description": "Surface must-fix issues, defensible choices, and likely reviewer misreadings."
     }
   },
   "live": {

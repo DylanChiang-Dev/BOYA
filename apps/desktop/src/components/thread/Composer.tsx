@@ -15,7 +15,7 @@ const MAX_HEIGHT_PX = 160;
 
 // Terminal-style input history: every sent input (prompt, "!cmd", "/name args")
 // in its typed form, shared across sessions, newest last, ↑/↓ to recall.
-const HISTORY_KEY = "ai4s.inputHistory";
+const HISTORY_KEY = "boya.inputHistory";
 const HISTORY_MAX = 100;
 function readHistory(): string[] {
   try {

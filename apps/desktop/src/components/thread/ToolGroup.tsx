@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { ThreadBlock, ToolCallBlock } from "@ai4s/shared";
+import type { ThreadBlock, ToolCallBlock } from "@boya/shared";
 import i18n from "@/i18n";
 import { cn } from "@/lib/cn";
 import { DiffView } from "@/components/code-viewer/DiffView";

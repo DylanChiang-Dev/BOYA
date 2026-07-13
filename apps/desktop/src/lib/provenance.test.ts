@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ToolUpdatedEvent } from "@ai4s/sdk";
+import type { ToolUpdatedEvent } from "@boya/sdk";
 import { provenanceInputFromEvent } from "./provenance";
 
 const write = (over: Partial<ToolUpdatedEvent> = {}): ToolUpdatedEvent => ({
@@ -25,7 +25,7 @@ describe("provenanceInputFromEvent", () => {
 
   it("replaces path-only or empty titles with a compact tool → path log", () => {
     // OpenCode write titles are usually just the file path — redundant.
-    const paths = provenanceInputFromEvent(write({ title: "Users/x/OpenScience/fig/plot.py" }));
+    const paths = provenanceInputFromEvent(write({ title: "Users/x/Boya/fig/plot.py" }));
     expect(paths?.log).toBe("write → fig/plot.py");
     const empty = provenanceInputFromEvent(write({ title: "" }));
     expect(empty?.log).toBe("write → fig/plot.py");

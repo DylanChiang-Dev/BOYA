@@ -1,65 +1,38 @@
-# Open Science Desktop
+# Boya Desktop
 
-Brand name: **Open Science Desktop** — "Local-first, model-agnostic AI research
-workbench for macOS, Windows & Linux." Formerly Open Science. Bundle identifier stays
-`com.ai4s.workbench` and internal `@ai4s/*` package names are unchanged.
+Private desktop product repository for a local-first humanities and
+social-science research workbench.
 
-Project rules and working context for AI agents (Claude Code, Cursor, Codex, etc.).
-`CLAUDE.md` is a symlink to this file — edit only `AGENTS.md`.
+## Product invariants
 
-## Design principles
+- Human-in-the-loop is non-negotiable. Never introduce an autonomous research
+  pipeline or let the agent choose research questions, sources, frameworks,
+  methods, interpretations, arguments, venues, or final authorship.
+- The public `DylanChiang-Dev/boya` repository is the only source of truth for
+  Boya skills. This repository may pin and bundle it, but must not fork or edit
+  the skill content privately.
+- Never fabricate references, facts, data, journal requirements, or completed
+  verification. Preserve provenance and make uncertainty visible.
+- Model-provider secrets stay in app-private storage and never enter the
+  workspace, provenance, logs, exports, or git.
 
-Keep it **simple, explicit, clear, complete**.
+## Architecture
 
-- **Simple** — no over-engineering; if not necessary, do not add entities.
-- **Explicit** — no ambiguity; no bugs.
-- **Clear** — understandable at a glance.
-- **Complete** — cover the key points; prioritize safety.
+- `apps/desktop/`: Tauri 2 + React + TypeScript + Vite.
+- `packages/sdk/`: the only frontend boundary to the bundled OpenCode runtime.
+- `packages/shared/`: stable domain types.
+- `runtime/harness/`: rules seeded into new research workspaces.
+- `runtime/skills/`: curated utility skills; Boya and office skills are fetched
+  at pinned commits into the ignored `external/` directory.
 
-## What this project is
-
-An open-source, local-first, model-agnostic, reproducible AI research desktop
-for macOS, Windows, and Linux. See `README.md`, `docs/PRD.md`, and
-`docs/TECHNICAL_DESIGN.md`.
-
-Recommended stack: **Tauri 2 + React + TypeScript + Vite**, Tailwind + Radix UI,
-**OpenCode** as the agent runtime (bundled single-binary sidecar; HTTP + SSE API),
-local workspace + SQLite + JSONL provenance.
-
-## Repository map
-
-- `apps/desktop/` — Tauri + React desktop shell (`src/` frontend, `src-tauri/` Rust).
-- `packages/` — `ui`, `shared`, `sdk` (the `OpenCodeClient` wrapper).
-- `runtime/` — `manager`, `opencode-profile`, `mcp`, `skills`.
-- `docs/` — product and technical specs.
-- `examples/bci-trends/` — the built-in demo project.
-- `scripts/` — release and dev scripts.
-
-## Architecture guardrails
-
-- The UI never calls OpenCode directly — it goes through `packages/sdk` (`OpenCodeClient`).
-  Pin the OpenCode version (see `OPENCODE_VERSION`) and bundle it as a sidecar.
-- Keep the frontend, desktop shell, and agent runtime decoupled.
-- Skills, MCP servers, and model providers must stay pluggable.
-- Keep the artifact schema and workflow templates stable and versioned.
-
-## Safety defaults (non-negotiable for the desktop)
-
-- The agent may only access the current workspace.
-- Command execution, file deletion, dependency install, and remote connections
-  require approval (manual approval mode by default — never ship `off`).
-- API keys go to the OS keychain / credential manager; never into provenance,
-  logs, crash reports, git, or exported projects.
+Keep the frontend, desktop host, and runtime decoupled. The agent may only
+access the active workspace. Destructive commands, dependency installation,
+and remote access require approval.
 
 ## Working conventions
 
-- Default working language for discussion is Chinese; **all project files and
-  code are in English** (this is a pure-English project).
-- One progress file: `PROGRESS.md`. Append one line per real milestone,
-  `YYYY-MM-DD HH:MM` + a one-sentence conclusion, newest on top. Results and
-  blockers only.
-- Avoid adding new Markdown docs unless requested — too many docs become debt.
-- Prefer minimal, verifiable changes; every step should produce a checkable result.
-- Do not write inferences as verified facts; tie conclusions to code or data.
-- New session workspaces are local git repos: the app initializes them and makes
-  best-effort local commits after workspace file changes. Never set a remote or push.
+- Discussion defaults to Chinese; source code and repository documentation use English.
+- Keep changes small and verifiable. Update `PROGRESS.md` only for completed milestones.
+- Use `upstream` as fetch-only. Never push to it.
+- Run the skill pin check, frontend tests, typecheck, lint, Rust tests, and audit
+  before pushing product changes.

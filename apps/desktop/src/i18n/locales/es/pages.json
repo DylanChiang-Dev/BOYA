@@ -56,7 +56,7 @@
   "skills": {
     "title": "Habilidades y agentes",
     "description": {
-      "prefix": "Cargado en vivo desde el entorno de ejecución de OpenCode — el paquete ai4s-skills incluido, más todo lo que haya bajo ",
+      "prefix": "Cargado en vivo desde el entorno de ejecución de OpenCode — el flujo de Boya incluido, más todo lo que haya bajo ",
       "suffix": " en tu espacio de trabajo."
     },
     "install": {

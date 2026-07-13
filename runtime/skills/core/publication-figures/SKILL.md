@@ -1,17 +1,17 @@
 ---
 name: publication-figures
-description: Use whenever you generate a chart, plot, or figure with matplotlib (or seaborn) in this workspace. Applies the Open Science publication figure style so every generated figure is publication-grade and shares one palette with the app's native charts. Not for interactive plotly/HTML — those follow the same palette manually.
+description: Use whenever you generate a chart, plot, or figure with matplotlib (or seaborn) in this workspace. Applies the Boya publication figure style so every generated figure is publication-grade and shares one palette with the app's native charts. Not for interactive plotly/HTML — those follow the same palette manually.
 ---
 
 # Publication Figures
 
 Make generated figures **publication-grade and on-system by default**. Every
-figure you produce with matplotlib must use the bundled Open Science style, so a
+figure you produce with matplotlib must use the bundled Boya style, so a
 figure in a report and a stat tile in the app read as one design system.
 
 ## Apply the style (always, before plotting)
 
-The style file `openscience.mplstyle` sits next to this SKILL.md. Load it by
+The style file `boya.mplstyle` sits next to this SKILL.md. Load it by
 absolute path at the top of any figure script:
 
 ```python
@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 # This skill's directory — the style ships beside SKILL.md.
-STYLE = Path(__file__).resolve().parent / "openscience.mplstyle" if "__file__" in dir() else None
+STYLE = Path(__file__).resolve().parent / "boya.mplstyle" if "__file__" in dir() else None
 # In a notebook/agent cell, use the skill's deployed path directly:
 plt.style.use(str(STYLE)) if STYLE and STYLE.exists() else plt.style.use("default")
 ```
@@ -61,7 +61,7 @@ Sequential (magnitude, one hue light→dark): `#cde2fb #9ec5f4 #6da7ec #3987e5
 
 ## Checklist before returning a figure
 
-1. Style applied (palette + chrome from `openscience.mplstyle`).
+1. Style applied (palette + chrome from `boya.mplstyle`).
 2. Series colors assigned in slot order; ≤8 series (else group into "Other").
 3. Single y-axis; legend iff ≥2 series; axis labels + units present.
 4. Saved to the workspace and referenced by path so it surfaces as an artifact.

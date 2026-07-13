@@ -14,7 +14,7 @@ import {
   Settings,
   Trash2,
 } from "lucide-react";
-import type { Project } from "@ai4s/shared";
+import type { Project } from "@boya/shared";
 import { cn } from "@/lib/cn";
 import { useRuntimeStore } from "@/lib/runtime";
 import { renameProject, type ProjectInfo } from "@/lib/tauri";
@@ -27,7 +27,6 @@ import {
 import { useUpdateStore } from "@/lib/update";
 import { StatusPills } from "./StatusPills";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import logo from "@/assets/logo.webp";
 
 interface Row {
   id: string;
@@ -42,7 +41,7 @@ const COLLAPSE_BELOW = 140;
 
 /** Projects the user folded shut (ids). Projects default to open — a
  *  researcher has a handful, and their sessions ARE the sidebar's content. */
-const COLLAPSED_KEY = "ai4s.collapsedProjects";
+const COLLAPSED_KEY = "boya.collapsedProjects";
 function initialCollapsedProjects(): string[] {
   if (typeof window === "undefined") return [];
   try {
@@ -268,11 +267,16 @@ export function Sidebar({ project }: { project: Project }) {
           </div>
         )}
         <div className={cn("px-4 pb-3", overlayTitlebar ? "pt-1" : "pt-4")}>
-          <div className="flex items-baseline gap-1.5">
-            <img src={logo} alt="" className="h-[18px] w-auto self-center" />
+          <div className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="grid size-[22px] place-items-center rounded bg-accent font-serif text-[14px] font-semibold leading-none text-accent-fg"
+            >
+              B
+            </span>
             {/* eslint-disable-next-line i18next/no-literal-string -- product brand name, not translated across locales (see AGENTS.md) */}
             <div className="font-serif text-[17px] font-semibold leading-none tracking-tight text-text">
-              Open Science
+              Boya Desktop
             </div>
             <span className="text-[10px] uppercase tracking-widest text-muted">
               {t("sidebar.betaBadge")}
