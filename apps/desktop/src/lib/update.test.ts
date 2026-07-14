@@ -10,7 +10,7 @@ import {
 
 const latest: UpdateInfo = {
   version: "v0.1.8",
-  url: "https://github.com/ai4s-research/open-science/releases/tag/v0.1.8",
+  url: "https://boya-website.pages.dev/zh-hant/desktop/#download",
   name: "v0.1.8",
   publishedAt: "2026-07-09T00:00:00Z",
 };
@@ -90,10 +90,10 @@ describe("update store", () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        tag_name: "v0.1.8",
-        html_url: latest.url,
-        name: latest.name,
-        published_at: latest.publishedAt,
+        version: "v0.1.8",
+        channel: "preview",
+        releasePageUrl: latest.url,
+        publishedAt: latest.publishedAt,
       }),
     });
     vi.stubGlobal("fetch", fetchMock);

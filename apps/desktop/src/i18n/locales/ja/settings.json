@@ -45,7 +45,7 @@
   },
   "updates": {
     "title": "アプリの更新",
-    "hint": "GitHub Releases を確認します。自動確認は 24 時間に 1 回までです",
+    "hint": "BOYA の公開リリース情報を確認します。自動確認は 24 時間に 1 回までです",
     "available": "更新があります",
     "checking": "確認中",
     "failed": "確認失敗",
@@ -62,7 +62,7 @@
     "autoCheckHint": "既定で有効です。アプリは 1 日 1 回まで確認します。",
     "showBadge": "設定バッジを表示",
     "showBadgeHint": "新しいリリースが見つかったら、設定に赤い点を表示します。",
-    "privacy": "公開 GitHub Releases API だけに接続します。ワークスペースのファイルや API キーは送信しません。"
+    "privacy": "BOYA の公開ウェブサイトだけに接続します。ワークスペースのファイルや API キーは送信しません。"
   },
   "model": {
     "title": "モデル",

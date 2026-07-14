@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { latestRelease } from "./tauri";
 
-const RELEASE_URL = "https://api.github.com/repos/DylanChiang-Dev/boya-desktop/releases/latest";
+const RELEASE_URL = "https://boya-website.pages.dev/releases/latest.json";
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const ENABLED_KEY = "boya.update.enabled";
 const BADGE_KEY = "boya.update.badge";
@@ -16,13 +16,11 @@ export interface UpdateInfo {
   publishedAt: string | null;
 }
 
-interface GitHubRelease {
-  tag_name?: string;
-  html_url?: string;
-  name?: string | null;
-  published_at?: string | null;
-  draft?: boolean;
-  prerelease?: boolean;
+interface ReleaseManifest {
+  version?: string;
+  channel?: string;
+  publishedAt?: string;
+  releasePageUrl?: string;
 }
 
 type CheckStatus = "idle" | "checking" | "ready" | "error";
@@ -131,21 +129,17 @@ async function fetchLatestRelease(): Promise<UpdateInfo> {
   const native = await latestRelease();
   if (native) return native;
 
-  const res = await fetch(RELEASE_URL, {
-    headers: {
-      Accept: "application/vnd.github+json",
-    },
-  });
-  if (!res.ok) throw new Error(`GitHub returned ${res.status}`);
-  const json = (await res.json()) as GitHubRelease;
-  const version = json.tag_name?.trim();
-  const url = json.html_url?.trim();
-  if (!version || !url) throw new Error("GitHub release response was incomplete");
+  const res = await fetch(RELEASE_URL, { headers: { Accept: "application/json" } });
+  if (!res.ok) throw new Error(`Boya update service returned ${res.status}`);
+  const json = (await res.json()) as ReleaseManifest;
+  const version = json.version?.trim();
+  const url = json.releasePageUrl?.trim();
+  if (!version || !url) throw new Error("Boya release manifest was incomplete");
   return {
     version,
     url,
-    name: json.name ?? null,
-    publishedAt: json.published_at ?? null,
+    name: json.channel ? `Boya Desktop ${version} (${json.channel})` : `Boya Desktop ${version}`,
+    publishedAt: json.publishedAt ?? null,
   };
 }
 

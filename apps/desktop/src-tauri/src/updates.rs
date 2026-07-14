@@ -1,6 +1,15 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-const RELEASES_ATOM_URL: &str = "https://github.com/DylanChiang-Dev/boya-desktop/releases.atom";
+const RELEASE_MANIFEST_URL: &str = "https://boya-website.pages.dev/releases/latest.json";
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct ReleaseManifest {
+    version: String,
+    channel: Option<String>,
+    published_at: Option<String>,
+    release_page_url: String,
+}
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -23,68 +32,33 @@ fn fetch_latest_release() -> Result<ReleaseInfo, String> {
         .user_agent("Boya Desktop update checker")
         .build()
         .map_err(|e| format!("could not create HTTP client: {e}"))?
-        .get(RELEASES_ATOM_URL)
+        .get(RELEASE_MANIFEST_URL)
         .send()
-        .and_then(|r| r.error_for_status())
-        .map_err(|e| format!("could not fetch GitHub releases feed: {e}"))?
+        .and_then(|response| response.error_for_status())
+        .map_err(|e| format!("could not fetch Boya release manifest: {e}"))?
         .text()
-        .map_err(|e| format!("could not read GitHub releases feed: {e}"))?;
+        .map_err(|e| format!("could not read Boya release manifest: {e}"))?;
     parse_latest_release(&body)
 }
 
-fn parse_latest_release(atom: &str) -> Result<ReleaseInfo, String> {
-    let entry =
-        between(atom, "<entry>", "</entry>").ok_or("GitHub releases feed had no entries")?;
-    let url = attr_value(entry, "link", "href")
-        .filter(|u| u.contains("/releases/tag/"))
-        .ok_or("GitHub releases feed entry had no release link")?;
-    let version = url
-        .rsplit("/releases/tag/")
-        .next()
-        .and_then(|s| s.split(['?', '#']).next())
-        .filter(|s| !s.trim().is_empty())
-        .ok_or("GitHub releases feed entry had no release tag")?
-        .trim()
-        .to_string();
-    let name = between(entry, "<title>", "</title>").map(decode_xml_text);
-    let published_at = between(entry, "<updated>", "</updated>").map(|s| s.trim().to_string());
+fn parse_latest_release(json: &str) -> Result<ReleaseInfo, String> {
+    let manifest: ReleaseManifest =
+        serde_json::from_str(json).map_err(|e| format!("invalid Boya release manifest: {e}"))?;
+    let version = manifest.version.trim().to_string();
+    let url = manifest.release_page_url.trim().to_string();
+    if version.is_empty() || url.is_empty() {
+        return Err("Boya release manifest was incomplete".into());
+    }
+    let name = manifest
+        .channel
+        .map(|channel| format!("Boya Desktop {version} ({channel})"))
+        .or_else(|| Some(format!("Boya Desktop {version}")));
     Ok(ReleaseInfo {
         version,
         url,
         name,
-        published_at,
+        published_at: manifest.published_at,
     })
-}
-
-fn between<'a>(s: &'a str, start: &str, end: &str) -> Option<&'a str> {
-    let from = s.find(start)? + start.len();
-    let to = s[from..].find(end)? + from;
-    Some(&s[from..to])
-}
-
-fn attr_value(entry: &str, tag: &str, attr: &str) -> Option<String> {
-    let needle = format!("<{tag} ");
-    let mut rest = entry;
-    while let Some(pos) = rest.find(&needle) {
-        let tag_body = &rest[pos..rest[pos..].find('>')? + pos];
-        let attr_needle = format!("{attr}=\"");
-        if let Some(attr_pos) = tag_body.find(&attr_needle) {
-            let value_start = attr_pos + attr_needle.len();
-            let value_end = tag_body[value_start..].find('"')? + value_start;
-            return Some(decode_xml_text(&tag_body[value_start..value_end]));
-        }
-        rest = &rest[pos + needle.len()..];
-    }
-    None
-}
-
-fn decode_xml_text(s: &str) -> String {
-    s.trim()
-        .replace("&amp;", "&")
-        .replace("&quot;", "\"")
-        .replace("&#39;", "'")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
 }
 
 #[cfg(test)]
@@ -92,25 +66,29 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_first_release_entry_from_atom() {
-        let atom = r#"
-<feed>
-  <entry>
-    <updated>2026-07-09T13:59:12Z</updated>
-    <link rel="alternate" type="text/html" href="https://github.com/boya-research/open-science/releases/tag/v0.1.8"/>
-    <title>Boya v0.1.8</title>
-  </entry>
-</feed>
-"#;
+    fn parses_release_manifest() {
+        let json = r#"{
+          "version": "0.1.8",
+          "channel": "preview",
+          "publishedAt": "2026-07-09T13:59:12Z",
+          "releasePageUrl": "https://boya-website.pages.dev/zh-hant/desktop/#download"
+        }"#;
 
         assert_eq!(
-            parse_latest_release(atom).unwrap(),
+            parse_latest_release(json).unwrap(),
             ReleaseInfo {
-                version: "v0.1.8".into(),
-                url: "https://github.com/boya-research/open-science/releases/tag/v0.1.8".into(),
-                name: Some("Boya v0.1.8".into()),
+                version: "0.1.8".into(),
+                url: "https://boya-website.pages.dev/zh-hant/desktop/#download".into(),
+                name: Some("Boya Desktop 0.1.8 (preview)".into()),
                 published_at: Some("2026-07-09T13:59:12Z".into()),
             },
         );
+    }
+
+    #[test]
+    fn rejects_incomplete_release_manifest() {
+        let error = parse_latest_release(r#"{"version":"","releasePageUrl":""}"#)
+            .expect_err("empty fields must be rejected");
+        assert_eq!(error, "Boya release manifest was incomplete");
     }
 }

@@ -45,7 +45,7 @@
   },
   "updates": {
     "title": "应用更新",
-    "hint": "通过 GitHub Releases 检查更新，24 小时内最多自动检查一次",
+    "hint": "通过 BOYA 公开版本清单检查更新，24 小时内最多自动检查一次",
     "available": "有新版本",
     "checking": "检查中",
     "failed": "检查失败",
@@ -62,7 +62,7 @@
     "autoCheckHint": "默认开启。应用每天最多自动检查一次。",
     "showBadge": "在设置入口显示红点",
     "showBadgeHint": "发现新版本时，在设置入口显示红点提醒。",
-    "privacy": "仅访问公开的 GitHub Releases API。不会发送工作区文件或 API 密钥。"
+    "privacy": "仅访问 BOYA 公开网站，不会发送工作区文件或 API 密钥。"
   },
   "model": {
     "title": "模型",

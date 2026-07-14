@@ -1,11 +1,12 @@
 # Boya Desktop
 
 Boya Desktop is a local-first AI research workbench for humanities and social
-sciences. It combines the human-in-the-loop [Boya](https://github.com/DylanChiang-Dev/boya)
+sciences. It combines the human-in-the-loop [Boya](https://github.com/DylanChiang-Dev/BOYA-skills)
 workflow with a desktop workspace for files, notebooks, runs, and provenance.
 
-This repository is a private alpha. There are no public installers, accounts,
-credits, payments, or production Boya Cloud API in this milestone.
+This repository is private. An unsigned macOS Apple Silicon preview is built
+for public distribution through the BOYA website and Cloudflare R2. There are
+no accounts, credits, payments, or production Boya Cloud API in this milestone.
 
 ## Product rules
 
@@ -14,7 +15,7 @@ credits, payments, or production Boya Cloud API in this milestone.
   arguments, and final submission choices always stop for human confirmation.
 - References and factual claims must return to real sources. Missing evidence
   stays pending and is never fabricated.
-- The public `boya` repository is the only source of truth for workflow skills.
+- The public `BOYA-skills` repository is the only source of truth for workflow skills.
   Desktop builds fetch a pinned commit instead of editing a private copy.
 - The autonomous `ai4s-agent` research pipeline is intentionally not bundled.
 
@@ -54,6 +55,11 @@ Build the unsigned macOS Apple Silicon app with:
 ```bash
 pnpm --filter @boya/desktop tauri build --target aarch64-apple-darwin --bundles app,dmg
 ```
+
+The manual `macos-alpha` GitHub Actions job also packages
+`BOYA-Desktop_0.1.0_aarch64.dmg` and its SHA-256 as a workflow artifact. Public
+downloads are hosted outside this private repository; the app checks
+`https://boya-website.pages.dev/releases/latest.json` for update metadata.
 
 ## Repository structure
 

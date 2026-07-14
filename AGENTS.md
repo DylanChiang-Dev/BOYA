@@ -8,7 +8,7 @@ social-science research workbench.
 - Human-in-the-loop is non-negotiable. Never introduce an autonomous research
   pipeline or let the agent choose research questions, sources, frameworks,
   methods, interpretations, arguments, venues, or final authorship.
-- The public `DylanChiang-Dev/boya` repository is the only source of truth for
+- The public `DylanChiang-Dev/BOYA-skills` repository is the only source of truth for
   Boya skills. This repository may pin and bundle it, but must not fork or edit
   the skill content privately.
 - Never fabricate references, facts, data, journal requirements, or completed

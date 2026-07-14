@@ -13,7 +13,7 @@ as the fetch-only `upstream` remote.
 
 ## Build-fetched components
 
-- Boya skills: https://github.com/DylanChiang-Dev/boya, MIT.
+- Boya skills: https://github.com/DylanChiang-Dev/BOYA-skills, MIT.
 - Anthropic document skills: https://github.com/anthropics/skills. Each fetched
   skill retains its own license file.
 - OpenCode sidecar: https://github.com/anomalyco/opencode. Its upstream license

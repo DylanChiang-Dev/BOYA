@@ -17,7 +17,7 @@ skipped.
 ## Default pack: Boya (bundled into the installer)
 
 The default workflow skills come from the
-[Boya skill repository](https://github.com/DylanChiang-Dev/boya). The repository
+[Boya skill repository](https://github.com/DylanChiang-Dev/BOYA-skills). The repository
 is the content source of truth; Desktop consumes one pinned commit and does not
 edit the skills locally.
 

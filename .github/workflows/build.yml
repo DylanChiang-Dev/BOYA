@@ -67,10 +67,20 @@ jobs:
           bash scripts/dev/check-boya-skills.sh
       - name: Build unsigned macOS alpha
         run: pnpm --filter @boya/desktop tauri build --target aarch64-apple-darwin --bundles app,dmg
+      - name: Package public preview artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/release
+          source_dmg="$(find apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg -name '*.dmg' -print -quit)"
+          test -n "$source_dmg"
+          output="dist/release/BOYA-Desktop_0.1.0_aarch64.dmg"
+          cp "$source_dmg" "$output"
+          shasum -a 256 "$output" > "$output.sha256"
       - uses: actions/upload-artifact@v4
         with:
-          name: boya-desktop-aarch64-apple-darwin
+          name: BOYA-Desktop_0.1.0_aarch64-preview
           path: |
-            apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app
-            apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+            dist/release/BOYA-Desktop_0.1.0_aarch64.dmg
+            dist/release/BOYA-Desktop_0.1.0_aarch64.dmg.sha256
           if-no-files-found: error

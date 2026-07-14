@@ -10,14 +10,14 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 BOYA_SKILLS_COMMIT="${BOYA_SKILLS_COMMIT:-591a37153c7b73a0d509981dd7e8028350e47761}"
 OUT_DIR="$ROOT/runtime/skills/external/boya"
 
-URL="https://github.com/DylanChiang-Dev/boya/archive/${BOYA_SKILLS_COMMIT}.tar.gz"
+URL="https://github.com/DylanChiang-Dev/BOYA-skills/archive/${BOYA_SKILLS_COMMIT}.tar.gz"
 TMP="$(mktemp -d)"
 echo "Downloading $URL"
 curl -fsSL "$URL" -o "$TMP/skills.tar.gz"
 tar -xzf "$TMP/skills.tar.gz" -C "$TMP"
 
 SRC=""
-for candidate in "$TMP"/boya-*; do
+for candidate in "$TMP"/BOYA-skills-*; do
   [ -d "$candidate" ] && SRC="$candidate" && break
 done
 [ -d "$SRC/skills" ] || { echo "No skills/ directory in archive" >&2; exit 1; }

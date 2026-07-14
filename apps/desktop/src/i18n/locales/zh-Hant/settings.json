@@ -45,7 +45,7 @@
   },
   "updates": {
     "title": "應用更新",
-    "hint": "通過 GitHub Releases 檢查更新，24 小時內最多自動檢查一次",
+    "hint": "透過 BOYA 公開版本清單檢查更新，24 小時內最多自動檢查一次",
     "available": "有新版本",
     "checking": "檢查中",
     "failed": "檢查失敗",
@@ -62,7 +62,7 @@
     "autoCheckHint": "默認開啓。應用每天最多自動檢查一次。",
     "showBadge": "在設置入口顯示紅點",
     "showBadgeHint": "發現新版本時，在設置入口顯示紅點提醒。",
-    "privacy": "僅訪問公開的 GitHub Releases API。不會發送工作區文件或 API 密鑰。"
+    "privacy": "僅訪問 BOYA 公開網站，不會傳送工作區文件或 API 金鑰。"
   },
   "model": {
     "title": "模型",

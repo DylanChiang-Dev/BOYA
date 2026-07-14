@@ -45,7 +45,7 @@
   },
   "updates": {
     "title": "App updates",
-    "hint": "Checks GitHub Releases at most once every 24 hours",
+    "hint": "Checks the BOYA release manifest at most once every 24 hours",
     "available": "Update available",
     "checking": "Checking",
     "failed": "Check failed",
@@ -62,7 +62,7 @@
     "autoCheckHint": "Enabled by default. The app checks at most once per day.",
     "showBadge": "Show Settings badge",
     "showBadgeHint": "Show a red dot on Settings when a newer release is found.",
-    "privacy": "Only the public GitHub Releases API is contacted. No workspace files or API keys are sent."
+    "privacy": "Only the public BOYA website is contacted. No workspace files or API keys are sent."
   },
   "model": {
     "title": "Model",
