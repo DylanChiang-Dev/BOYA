@@ -23,7 +23,7 @@ no accounts, credits, payments, or production Boya Cloud API in this milestone.
 
 - Tauri 2 desktop shell with a bundled OpenCode sidecar.
 - Local workspaces, files, notebooks, run records, and `.boya/` provenance.
-- The complete 15-skill Boya workflow pinned at commit `591a371`.
+- The complete 17-skill Boya v2.1.0 workflow pinned at commit `ad7f791`, including claim-to-source auditing and optional research records.
 - Document tools for DOCX, PDF, PPTX, and XLSX.
 - Curated traceability, statistics, large-file, and publication-figure tools.
 - Traditional Chinese, Simplified Chinese, English, and Japanese interfaces.

@@ -24,7 +24,7 @@ edit the skills locally.
 How they ship, end to end:
 
 1. `scripts/dev/fetch-skills.sh` (run locally and in CI) downloads the pack at a
-   pinned commit into `external/boya/` and verifies the exact 15-skill set.
+   pinned commit into `external/boya/` and verifies the canonical manifest, version, and exact 17-skill set.
 2. `tauri.conf.json` bundles that directory as `skills-boya/`.
 3. On every sidecar start, `runtime.rs::deploy_bundled_skills` syncs the pack into
    the app-private profile's global skills dir (`<xdg-config>/opencode/skills/`),
@@ -34,7 +34,8 @@ How they ship, end to end:
    (`GET /api/skill?directory=…`) — the SDK does this via its `directory` option.
 
 To bump the pack version, update `BOYA_SKILLS_COMMIT` in `fetch-skills.sh` and
-the matching commit in `check-boya-skills.sh`.
+the matching commit in `check-boya-skills.sh`. For an unpublished adjacent
+checkout, set `BOYA_SKILLS_SOURCE_DIR` and the same manifest checks still run.
 
 ## Office pack: Anthropic document skills (bundled into the installer)
 
