@@ -126,10 +126,11 @@ describe("BOYA Desktop", () => {
     }));
     fireEvent.click(await screen.findByRole("button", { name: "覆寫" }));
 
-    expect(client.replyApproval).toHaveBeenCalledWith({
+    await waitFor(() => expect(client.replyApproval).toHaveBeenCalledWith({
       requestId: "approval-2",
       value: "覆寫",
-    });
+    }));
+    await waitFor(() => expect(screen.queryByText("選擇處理方式")).not.toBeInTheDocument());
   });
 
   it("creates, renames, and archives sessions", async () => {

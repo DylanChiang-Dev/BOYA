@@ -17,7 +17,7 @@ import {
   Square,
   X,
 } from "lucide-react";
-import type { SessionSummary, ToolActivity } from "@boya/sdk";
+import type { ApprovalReply, ApprovalRequest, SessionSummary, ToolActivity } from "@boya/sdk";
 import { agentClient as defaultClient, type DesktopAgentClient } from "./lib/agentClient";
 import { resetAgentStore, useAgentStore } from "./lib/agentStore";
 
@@ -41,8 +41,12 @@ function Setup({ client }: { client: DesktopAgentClient }) {
   const [busy, setBusy] = useState(false);
 
   async function chooseFolder() {
-    const selected = await client.pickWorkspace();
-    if (selected) setWorkspace(selected);
+    try {
+      const selected = await client.pickWorkspace();
+      if (selected) setWorkspace(selected);
+    } catch (error) {
+      useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) });
+    }
   }
 
   async function submit(event: FormEvent) {
@@ -105,6 +109,26 @@ function ToolRow({ tool }: { tool: ToolActivity }) {
       {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}<code>{tool.tool}</code><span>{status}</span>
     </button>
     {expanded && <div className="tool-detail">{tool.input && <pre>{JSON.stringify(tool.input, null, 2)}</pre>}{(tool.output || tool.partialOutput) && <pre>{tool.output || tool.partialOutput}</pre>}</div>}
+  </div>;
+}
+
+function ApprovalBar({ approval, client }: { approval: ApprovalRequest; client: DesktopAgentClient }) {
+  function reply(value: ApprovalReply) {
+    void client.replyApproval(value)
+      .then(() => useAgentStore.setState({ approval: null }))
+      .catch((error) => useAgentStore.setState({
+        error: error instanceof Error ? error.message : String(error),
+      }));
+  }
+
+  return <div className="approval-bar" role="alertdialog" aria-label="需要確認">
+    <div className="approval-copy"><strong>需要確認</strong><span>{approval.detail}</span></div>
+    <div className="approval-actions">
+      <button type="button" className="secondary-button" onClick={() => reply({ requestId: approval.requestId, cancelled: true })}>拒絕</button>
+      {approval.action === "confirm"
+        ? <button type="button" className="primary-button compact" onClick={() => reply({ requestId: approval.requestId, confirmed: true })}>允許一次</button>
+        : approval.options?.map((option) => <button key={option} type="button" className="primary-button compact" onClick={() => reply({ requestId: approval.requestId, value: option })}>{option}</button>)}
+    </div>
   </div>;
 }
 
@@ -171,7 +195,6 @@ function Workbench({ client }: { client: DesktopAgentClient }) {
   async function createSession() {
     try {
       await client.newSession();
-      await store.refreshSessions(client);
       useAgentStore.setState({ activePath: null, messages: [], streamingText: "", tools: [], approval: null });
     } catch (error) { useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }); }
   }
@@ -202,11 +225,11 @@ function Workbench({ client }: { client: DesktopAgentClient }) {
         <div ref={endRef} />
       </div>
       {store.error && <div className="runtime-error"><span>{store.error}</span><IconButton label="關閉錯誤" onClick={() => useAgentStore.setState({ error: null })}><X size={15} /></IconButton></div>}
-      <form className="composer" onSubmit={submit}><textarea aria-label="訊息" value={input} onChange={(event) => setInput(event.target.value)} placeholder="傳訊息給 Pi" rows={1} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />{store.snapshot.running ? <IconButton label="停止" onClick={() => void client.abort()}><Square size={16} fill="currentColor" /></IconButton> : <button className="send-button" type="submit" aria-label="傳送" disabled={!input.trim()}><Send size={17} /></button>}</form>
+      <form className="composer" onSubmit={submit}><textarea aria-label="訊息" value={input} onChange={(event) => setInput(event.target.value)} placeholder="傳訊息給 Pi" rows={1} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />{store.snapshot.running ? <IconButton label="停止" onClick={() => void client.abort().catch((error) => useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }))}><Square size={16} fill="currentColor" /></IconButton> : <button className="send-button" type="submit" aria-label="傳送" disabled={!input.trim()}><Send size={17} /></button>}</form>
     </main>
-    {store.approval && <div className="approval-bar"><div><strong>需要確認</strong><span>{store.approval.detail}</span></div><button type="button" className="secondary-button" onClick={() => { void client.replyApproval({ requestId: store.approval!.requestId, cancelled: true }); useAgentStore.setState({ approval: null }); }}>拒絕</button><button type="button" className="primary-button compact" onClick={() => { void client.replyApproval({ requestId: store.approval!.requestId, confirmed: true }); useAgentStore.setState({ approval: null }); }}>允許一次</button></div>}
+    {store.approval && <ApprovalBar approval={store.approval} client={client} />}
     {settings && <SettingsPanel client={client} onClose={() => setSettings(false)} />}
-    {renaming && <div className="modal-backdrop"><form className="rename-dialog" onSubmit={async (event) => { event.preventDefault(); await client.renameSession(renaming.path, renameValue); setRenaming(null); await store.refreshSessions(client); await store.selectSession(client, renaming.path); }}><h2>重新命名對話</h2><label className="field"><span>對話名稱</span><input aria-label="對話名稱" autoFocus value={renameValue} onChange={(event) => setRenameValue(event.target.value)} /></label><div className="button-row"><button type="button" className="secondary-button" onClick={() => setRenaming(null)}>取消</button><button type="submit" className="primary-button compact">儲存名稱</button></div></form></div>}
+    {renaming && <div className="modal-backdrop"><form className="rename-dialog" onSubmit={async (event) => { event.preventDefault(); try { await client.renameSession(renaming.path, renameValue); setRenaming(null); await store.refreshSessions(client); await store.selectSession(client, renaming.path); } catch (error) { useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }); } }}><h2>重新命名對話</h2><label className="field"><span>對話名稱</span><input aria-label="對話名稱" autoFocus value={renameValue} onChange={(event) => setRenameValue(event.target.value)} /></label><div className="button-row"><button type="button" className="secondary-button" onClick={() => setRenaming(null)}>取消</button><button type="submit" className="primary-button compact">儲存名稱</button></div></form></div>}
   </div>;
 }
 
@@ -217,10 +240,10 @@ export function App({ client = defaultClient }: AppProps) {
     const unsubscribe = client.subscribe((event) => {
       useAgentStore.getState().handleEvent(event);
       if (event.type === "runtime.settled") {
-        void useAgentStore.getState().refreshSessions(client);
+        void useAgentStore.getState().refreshSessions(client).catch((error) => useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }));
       }
     });
-    void useAgentStore.getState().initialize(client);
+    void useAgentStore.getState().initialize(client).catch((error) => useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }));
     return unsubscribe;
   }, [client]);
   if (store.booting) return <div className="boot-screen"><LoaderCircle className="spin" size={22} />正在啟動 Pi</div>;
