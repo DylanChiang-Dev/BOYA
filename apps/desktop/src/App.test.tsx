@@ -90,8 +90,10 @@ describe("BOYA Desktop", () => {
     fireEvent.click(screen.getByRole("button", { name: "傳送" }));
     expect(await screen.findByText("正在整理")).toBeInTheDocument();
 
-    act(() => client.emit({ type: "tool.updated", tool: { callId: "tool-1", tool: "read", status: "success", input: { path: "notes.md" }, output: "12 lines" } }));
+    act(() => client.emit({ type: "tool.updated", tool: { callId: "tool-1", tool: "read", status: "running", input: { path: "notes.md" } } }));
+    act(() => client.emit({ type: "tool.updated", tool: { callId: "tool-1", tool: "read", status: "success", output: "12 lines" } }));
     fireEvent.click(await screen.findByRole("button", { name: /read/ }));
+    expect(screen.getByText(/notes\.md/)).toBeInTheDocument();
     expect(screen.getByText("12 lines")).toBeInTheDocument();
 
     act(() => client.emit({ type: "approval.requested", approval: { requestId: "approval-1", action: "confirm", detail: "覆寫 notes.md？" } }));
@@ -104,6 +106,30 @@ describe("BOYA Desktop", () => {
 
     act(() => client.emit({ type: "runtime.error", message: "Pi 意外結束" }));
     expect(await screen.findByText("Pi 意外結束")).toBeInTheDocument();
+  });
+
+  it("returns the selected value for Pi select approvals", async () => {
+    const client = new FakeClient();
+    client.keyConfigured = true;
+    client.workspace = "/Users/research/field-notes";
+    render(<App client={client} />);
+    await screen.findByText("尚無對話");
+
+    act(() => client.emit({
+      type: "approval.requested",
+      approval: {
+        requestId: "approval-2",
+        action: "select",
+        detail: "選擇處理方式",
+        options: ["保留", "覆寫"],
+      },
+    }));
+    fireEvent.click(await screen.findByRole("button", { name: "覆寫" }));
+
+    expect(client.replyApproval).toHaveBeenCalledWith({
+      requestId: "approval-2",
+      value: "覆寫",
+    });
   });
 
   it("creates, renames, and archives sessions", async () => {
@@ -164,5 +190,22 @@ describe("BOYA Desktop", () => {
 
     expect(await screen.findByText("Keychain unavailable")).toBeInTheDocument();
     expect(client.keyConfigured).toBe(true);
+  });
+
+  it("replaces the optimistic user message with Pi history instead of duplicating it", async () => {
+    const client = new FakeClient();
+    client.keyConfigured = true;
+    client.workspace = "/Users/research/field-notes";
+    render(<App client={client} />);
+    await screen.findByText("尚無對話");
+
+    fireEvent.change(screen.getByLabelText("訊息"), { target: { value: "只顯示一次" } });
+    fireEvent.click(screen.getByRole("button", { name: "傳送" }));
+    act(() => client.emit({
+      type: "message.completed",
+      message: { id: "pi-user-1", role: "user", content: "只顯示一次", createdAt: 2 },
+    }));
+
+    expect(screen.getAllByText("只顯示一次")).toHaveLength(1);
   });
 });
