@@ -66,6 +66,18 @@ export class PiEventNormalizer {
       }];
     }
     if (type === "message_end") {
+      const raw = frame.message && typeof frame.message === "object"
+        ? frame.message as { stopReason?: unknown; errorMessage?: unknown }
+        : null;
+      if (raw?.stopReason === "error" || raw?.stopReason === "aborted") {
+        const fallback = raw.stopReason === "aborted"
+          ? "The current turn was stopped"
+          : "Pi could not complete the response";
+        return [{
+          type: "runtime.error",
+          message: typeof raw.errorMessage === "string" ? raw.errorMessage : fallback,
+        }];
+      }
       const message = messageFrom(frame.message, `message-${++this.sequence}`);
       return message ? [{ type: "message.completed", message }] : [];
     }
@@ -130,4 +142,3 @@ export class PiEventNormalizer {
     return [];
   }
 }
-
