@@ -1,3 +1,4 @@
+import { StrictMode } from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type {
@@ -20,6 +21,7 @@ class FakeClient implements DesktopAgentClient {
   abort = vi.fn(async () => {});
   replyApproval = vi.fn(async (_reply: ApprovalReply) => {});
   stop = vi.fn(async () => {});
+  startCalls = 0;
   setApiKey = vi.fn(async () => { this.keyConfigured = true; });
   removeApiKey = vi.fn(async () => { this.keyConfigured = false; });
 
@@ -39,6 +41,7 @@ class FakeClient implements DesktopAgentClient {
     return { status: "offline", workspace: this.workspace, sessionId: null, model: "gpt-5.6-terra", running: false };
   }
   async start(workspace?: string): Promise<RuntimeSnapshot> {
+    this.startCalls += 1;
     this.workspace = workspace ?? this.workspace;
     return { status: "ready", workspace: this.workspace, sessionId: "session-1", model: "gpt-5.6-terra", running: false };
   }
@@ -131,6 +134,37 @@ describe("BOYA Desktop", () => {
       value: "覆寫",
     }));
     await waitFor(() => expect(screen.queryByText("選擇處理方式")).not.toBeInTheDocument());
+  });
+
+  it("queues simultaneous approvals without losing an earlier request", async () => {
+    const client = new FakeClient();
+    client.keyConfigured = true;
+    client.workspace = "/Users/research/field-notes";
+    render(<App client={client} />);
+    await screen.findByText("尚無對話");
+
+    act(() => {
+      client.emit({ type: "approval.requested", approval: { requestId: "first", action: "confirm", detail: "第一個確認" } });
+      client.emit({ type: "approval.requested", approval: { requestId: "second", action: "confirm", detail: "第二個確認" } });
+    });
+
+    expect(screen.getByText("第一個確認")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "允許一次" }));
+    expect(await screen.findByText("第二個確認")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "拒絕" }));
+    await waitFor(() => expect(client.replyApproval).toHaveBeenNthCalledWith(1, { requestId: "first", confirmed: true }));
+    await waitFor(() => expect(client.replyApproval).toHaveBeenNthCalledWith(2, { requestId: "second", cancelled: true }));
+  });
+
+  it("starts Pi once under React StrictMode", async () => {
+    const client = new FakeClient();
+    client.keyConfigured = true;
+    client.workspace = "/Users/research/field-notes";
+
+    render(<StrictMode><App client={client} /></StrictMode>);
+    await screen.findByText("尚無對話");
+
+    expect(client.startCalls).toBe(1);
   });
 
   it("creates, renames, and archives sessions", async () => {
