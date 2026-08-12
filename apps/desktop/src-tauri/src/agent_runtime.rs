@@ -5,6 +5,7 @@ use std::fs;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Component, Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -295,6 +296,7 @@ const EVENT_CHANNEL: &str = "agent-runtime-event";
 const KEYCHAIN_SERVICE: &str = "dev.dylanchiang.boya.openai";
 const KEYCHAIN_ACCOUNT: &str = "openai";
 const DEFAULT_MODEL: &str = "gpt-5.6-terra";
+static MESSAGE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -559,15 +561,48 @@ fn normalize_message(frame: &Value) -> Option<Value> {
                 .unwrap_or_default()
                 .as_millis() as u64
         });
+    let id = frame
+        .get("id")
+        .or_else(|| message.get("id"))
+        .and_then(Value::as_str)
+        .map(str::to_owned)
+        .unwrap_or_else(|| {
+            format!(
+                "pi-message-{created_at}-{}",
+                MESSAGE_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+            )
+        });
     Some(serde_json::json!({
         "type": "message.completed",
         "message": {
-            "id": frame.get("id").and_then(Value::as_str).unwrap_or("pi-message"),
+            "id": id,
             "role": role,
             "content": content,
             "createdAt": created_at
         }
     }))
+}
+
+fn drain_pending_requests(
+    pending: &Arc<Mutex<HashMap<String, mpsc::Sender<Result<Value, String>>>>>,
+    reason: &str,
+) {
+    if let Ok(mut requests) = pending.lock() {
+        for (_, sender) in requests.drain() {
+            let _ = sender.send(Err(reason.to_owned()));
+        }
+    }
+}
+
+fn validate_prompt_message(message: &str) -> Result<&str, String> {
+    let trimmed = message.trim();
+    if trimmed.is_empty() {
+        return Err("Message cannot be empty".into());
+    }
+    if trimmed.starts_with('/') || trimmed.starts_with('!') {
+        return Err("Pi commands and shell shortcuts are disabled in BOYA 0.2".into());
+    }
+    Ok(trimmed)
 }
 
 fn normalized_event(frame: &Value) -> Option<Value> {
@@ -707,6 +742,7 @@ fn handle_stdout(
         }
     }
 
+    drain_pending_requests(&pending, "Pi runtime exited");
     let mut should_restart = false;
     if let Ok(mut inner) = state.lock() {
         if inner.generation == generation && inner.desired_running {
@@ -928,11 +964,7 @@ fn stop_process(state: &AgentRuntimeState) -> Result<(), String> {
             let _ = child.kill();
             let _ = child.wait();
         }
-        if let Ok(mut pending) = process.pending.lock() {
-            for (_, sender) in pending.drain() {
-                let _ = sender.send(Err("Pi runtime stopped".into()));
-            }
-        }
+        drain_pending_requests(&process.pending, "Pi runtime stopped");
     }
     Ok(())
 }
@@ -999,10 +1031,16 @@ pub fn agent_set_api_key(key: String) -> Result<(), String> {
 pub fn agent_remove_api_key() -> Result<(), String> {
     #[cfg(target_os = "macos")]
     {
-        let _ = security_framework::passwords::delete_generic_password(
+        use security_framework_sys::base::errSecItemNotFound;
+
+        match security_framework::passwords::delete_generic_password(
             KEYCHAIN_SERVICE,
             KEYCHAIN_ACCOUNT,
-        );
+        ) {
+            Ok(()) => {}
+            Err(error) if error.code() == errSecItemNotFound => {}
+            Err(error) => return Err(format!("Cannot remove API Key from Keychain: {error}")),
+        }
     }
     #[cfg(not(target_os = "macos"))]
     return Err("BOYA Desktop 0.2 only supports macOS".into());
@@ -1113,9 +1151,7 @@ pub fn agent_stop(app: AppHandle, state: State<'_, AgentRuntimeState>) -> Result
 
 #[tauri::command]
 pub fn agent_prompt(state: State<'_, AgentRuntimeState>, message: String) -> Result<(), String> {
-    if message.trim().is_empty() {
-        return Err("Message cannot be empty".into());
-    }
+    let message = validate_prompt_message(&message)?;
     if lock(&state.inner)?.snapshot.running {
         return Err("A turn is already running".into());
     }
@@ -1550,6 +1586,28 @@ mod tests {
             .to_owned();
 
         assert_ne!(first_id, second_id);
+    }
+
+    #[test]
+    fn rejects_reserved_rpc_commands_before_they_reach_pi() {
+        assert!(validate_prompt_message("/model").is_err());
+        assert!(validate_prompt_message("  !pwd").is_err());
+        assert!(validate_prompt_message("Explain /model as plain text").is_ok());
+    }
+
+    #[test]
+    fn drains_pending_rpc_requests_when_stdout_closes() {
+        let pending = Arc::new(Mutex::new(HashMap::new()));
+        let (sender, receiver) = mpsc::channel();
+        pending.lock().unwrap().insert("request-1".into(), sender);
+
+        drain_pending_requests(&pending, "Pi runtime exited");
+
+        assert_eq!(
+            receiver.recv_timeout(Duration::from_millis(50)).unwrap(),
+            Err("Pi runtime exited".into())
+        );
+        assert!(pending.lock().unwrap().is_empty());
     }
 
     #[cfg(target_os = "macos")]

@@ -19,6 +19,9 @@ class FakeClient implements DesktopAgentClient {
   messages: ChatMessage[] = [];
   abort = vi.fn(async () => {});
   replyApproval = vi.fn(async (_reply: ApprovalReply) => {});
+  stop = vi.fn(async () => {});
+  setApiKey = vi.fn(async () => { this.keyConfigured = true; });
+  removeApiKey = vi.fn(async () => { this.keyConfigured = false; });
 
   subscribe(listener: (event: RuntimeEvent) => void) {
     this.listeners.add(listener);
@@ -30,8 +33,6 @@ class FakeClient implements DesktopAgentClient {
   }
 
   async apiKeyStatus() { return this.keyConfigured; }
-  async setApiKey() { this.keyConfigured = true; }
-  async removeApiKey() { this.keyConfigured = false; }
   async pickWorkspace() { this.workspace = "/Users/research/field-notes"; return this.workspace; }
   async versions() { return { boya: "0.2.0", pi: "v0.84.1" }; }
   async snapshot(): Promise<RuntimeSnapshot> {
@@ -41,13 +42,17 @@ class FakeClient implements DesktopAgentClient {
     this.workspace = workspace ?? this.workspace;
     return { status: "ready", workspace: this.workspace, sessionId: "session-1", model: "gpt-5.6-terra", running: false };
   }
-  async stop() {}
   async prompt(message: string) {
     this.messages.push({ id: "user-1", role: "user", content: message, createdAt: 1 });
     this.emit({ type: "text.delta", contentIndex: 0, delta: "正在整理" });
   }
   async listSessions() { return this.sessions; }
-  async newSession() {}
+  async newSession() {
+    this.emit({
+      type: "snapshot.updated",
+      snapshot: { status: "ready", workspace: this.workspace, sessionId: "session-2", model: "gpt-5.6-terra", running: false },
+    });
+  }
   async switchSession() {}
   async renameSession(path: string, title: string) {
     const session = this.sessions.find((item) => item.path === path);
@@ -122,5 +127,42 @@ describe("BOYA Desktop", () => {
     fireEvent.click(screen.getByRole("button", { name: "更多" }));
     fireEvent.click(screen.getByRole("button", { name: "封存" }));
     await waitFor(() => expect(screen.queryByText("文獻整理")).not.toBeInTheDocument());
+  });
+
+  it("restarts after updating the Key and stops before removing it", async () => {
+    const client = new FakeClient();
+    client.keyConfigured = true;
+    client.workspace = "/Users/research/field-notes";
+    render(<App client={client} />);
+    await screen.findByText("尚無對話");
+
+    fireEvent.click(screen.getByRole("button", { name: "設定" }));
+    fireEvent.change(screen.getByLabelText("更新 OpenAI API Key"), { target: { value: "sk-updated-test-key" } });
+    fireEvent.click(screen.getByRole("button", { name: "更新" }));
+
+    await waitFor(() => expect(client.setApiKey).toHaveBeenCalledWith("sk-updated-test-key"));
+    expect(client.setApiKey).toHaveBeenCalledBefore(client.stop);
+    await waitFor(() => expect(client.workspace).toBe("/Users/research/field-notes"));
+
+    fireEvent.click(screen.getByRole("button", { name: "移除 Key" }));
+    await waitFor(() => expect(client.removeApiKey).toHaveBeenCalled());
+    expect(client.stop).toHaveBeenCalledBefore(client.removeApiKey);
+    expect(await screen.findByRole("heading", { name: "設定 BOYA" })).toBeInTheDocument();
+  });
+
+  it("surfaces settings failures without applying optimistic state", async () => {
+    const client = new FakeClient();
+    client.keyConfigured = true;
+    client.workspace = "/Users/research/field-notes";
+    client.setApiKey.mockRejectedValueOnce(new Error("Keychain unavailable"));
+    render(<App client={client} />);
+    await screen.findByText("尚無對話");
+
+    fireEvent.click(screen.getByRole("button", { name: "設定" }));
+    fireEvent.change(screen.getByLabelText("更新 OpenAI API Key"), { target: { value: "sk-updated-test-key" } });
+    fireEvent.click(screen.getByRole("button", { name: "更新" }));
+
+    expect(await screen.findByText("Keychain unavailable")).toBeInTheDocument();
+    expect(client.keyConfigured).toBe(true);
   });
 });

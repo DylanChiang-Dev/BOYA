@@ -1,0 +1,137 @@
+import { create } from "zustand";
+import type {
+  ApprovalRequest,
+  ChatMessage,
+  ModelInfo,
+  RuntimeEvent,
+  RuntimeSnapshot,
+  SessionSummary,
+  ToolActivity,
+} from "@boya/sdk";
+import type { DesktopAgentClient } from "./agentClient";
+
+interface AgentStore {
+  booting: boolean;
+  configured: boolean;
+  keyConfigured: boolean;
+  workspace: string | null;
+  snapshot: RuntimeSnapshot;
+  sessions: SessionSummary[];
+  activePath: string | null;
+  messages: ChatMessage[];
+  streamingText: string;
+  tools: ToolActivity[];
+  approval: ApprovalRequest | null;
+  models: ModelInfo[];
+  versions: { boya: string; pi: string };
+  error: string | null;
+  initialize(client: DesktopAgentClient): Promise<void>;
+  handleEvent(event: RuntimeEvent): void;
+  refreshSessions(client: DesktopAgentClient): Promise<void>;
+  selectSession(client: DesktopAgentClient, path: string): Promise<void>;
+}
+
+const initialSnapshot: RuntimeSnapshot = {
+  status: "offline",
+  workspace: null,
+  sessionId: null,
+  model: "gpt-5.6-terra",
+  running: false,
+};
+
+export const useAgentStore = create<AgentStore>((set, get) => ({
+  booting: true,
+  configured: false,
+  keyConfigured: false,
+  workspace: null,
+  snapshot: initialSnapshot,
+  sessions: [],
+  activePath: null,
+  messages: [],
+  streamingText: "",
+  tools: [],
+  approval: null,
+  models: [],
+  versions: { boya: "0.2.0", pi: "v0.84.1" },
+  error: null,
+
+  async initialize(client) {
+    try {
+      const [keyConfigured, snapshot, versions] = await Promise.all([
+        client.apiKeyStatus(),
+        client.snapshot(),
+        client.versions(),
+      ]);
+      const workspace = snapshot.workspace;
+      set({ keyConfigured, snapshot, workspace, versions });
+      if (!keyConfigured || !workspace) {
+        set({ configured: false, booting: false });
+        return;
+      }
+      const ready = await client.start(workspace);
+      const [sessions, models] = await Promise.all([client.listSessions(), client.listModels()]);
+      set({ configured: true, booting: false, snapshot: ready, sessions, models });
+      if (sessions[0]) await get().selectSession(client, sessions[0].path);
+    } catch (error) {
+      set({ booting: false, error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+
+  handleEvent(event) {
+    if (event.type === "snapshot.updated") {
+      set({ snapshot: event.snapshot, workspace: event.snapshot.workspace });
+    } else if (event.type === "text.delta") {
+      set((state) => ({ streamingText: state.streamingText + event.delta }));
+    } else if (event.type === "message.completed") {
+      set((state) => ({
+        messages: [...state.messages.filter((message) => message.id !== event.message.id), event.message],
+        streamingText: "",
+      }));
+    } else if (event.type === "tool.updated") {
+      set((state) => ({
+        tools: [...state.tools.filter((tool) => tool.callId !== event.tool.callId), event.tool],
+      }));
+    } else if (event.type === "approval.requested") {
+      set({ approval: event.approval });
+    } else if (event.type === "runtime.settled") {
+      set((state) => ({ snapshot: { ...state.snapshot, running: false } }));
+    } else if (event.type === "runtime.error") {
+      set({ error: event.message });
+    }
+  },
+
+  async refreshSessions(client) {
+    const sessions = await client.listSessions();
+    const state = get();
+    const activePath = state.activePath
+      ?? sessions.find((session) => session.id === state.snapshot.sessionId)?.path
+      ?? null;
+    set({ sessions, activePath });
+  },
+
+  async selectSession(client, path) {
+    if (get().snapshot.running) throw new Error("請先停止目前回合");
+    await client.switchSession(path);
+    const messages = await client.getMessages();
+    set({ activePath: path, messages, streamingText: "", tools: [], approval: null });
+  },
+}));
+
+export function resetAgentStore() {
+  useAgentStore.setState({
+    booting: true,
+    configured: false,
+    keyConfigured: false,
+    workspace: null,
+    snapshot: initialSnapshot,
+    sessions: [],
+    activePath: null,
+    messages: [],
+    streamingText: "",
+    tools: [],
+    approval: null,
+    models: [],
+    versions: { boya: "0.2.0", pi: "v0.84.1" },
+    error: null,
+  });
+}
