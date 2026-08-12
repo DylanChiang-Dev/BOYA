@@ -142,8 +142,14 @@ pub fn shell_sandbox_profile(workspace: &Path) -> String {
 (allow signal (target self))
 (allow file-read* (literal "/") (subpath "/System") (subpath "/usr") (subpath "/bin") (subpath "/sbin") (subpath "/Library/Apple") (subpath (param "WORKSPACE")))
 (allow file-write* (subpath (param "WORKSPACE")))
-(deny file-read* (subpath (string-append (param "WORKSPACE") "/.git")) (regex #".*\.env(\..*)?$"))
-(deny file-write* (subpath (string-append (param "WORKSPACE") "/.git")) (regex #".*\.env(\..*)?$"))
+(deny file-read*
+  (regex #"/\.(git|ssh|gnupg|aws|azure|config|docker|kube)(/|$)")
+  (regex #"/\.(netrc|npmrc|pypirc)$")
+  (regex #"/\.env(\..*)?$"))
+(deny file-write*
+  (regex #"/\.(git|ssh|gnupg|aws|azure|config|docker|kube)(/|$)")
+  (regex #"/\.(netrc|npmrc|pypirc)$")
+  (regex #"/\.env(\..*)?$"))
 (allow sysctl-read)
 (allow mach-lookup)
 (deny mach-lookup (global-name "com.apple.securityd") (global-name "com.apple.trustd.agent"))
@@ -363,7 +369,7 @@ struct RuntimeInner {
     process: Option<RuntimeProcess>,
     config: Option<RuntimeConfig>,
     desired_running: bool,
-    restart_count: u8,
+    crash_restart_available: bool,
     generation: u64,
     request_sequence: u64,
 }
@@ -375,10 +381,16 @@ impl Default for RuntimeInner {
             process: None,
             config: None,
             desired_running: false,
-            restart_count: 0,
+            crash_restart_available: true,
             generation: 0,
             request_sequence: 0,
         }
+    }
+}
+
+impl RuntimeInner {
+    fn take_crash_restart_allowance(&mut self) -> bool {
+        std::mem::replace(&mut self.crash_restart_available, false)
     }
 }
 
@@ -789,8 +801,7 @@ fn handle_stdout(
         if inner.generation == generation && inner.desired_running {
             inner.process = None;
             inner.snapshot.running = false;
-            if inner.restart_count == 0 {
-                inner.restart_count = 1;
+            if inner.take_crash_restart_allowance() {
                 inner.snapshot.status = "starting".into();
                 inner.snapshot.error = Some("Pi exited unexpectedly; restarting once".into());
                 should_restart = true;
@@ -1162,7 +1173,6 @@ pub fn agent_start(
     {
         let mut inner = lock(&state.inner)?;
         inner.desired_running = true;
-        inner.restart_count = 0;
         inner.snapshot.status = "starting".into();
         inner.snapshot.workspace = Some(workspace.to_string_lossy().into_owned());
         inner.snapshot.model = model.clone();
@@ -1572,10 +1582,13 @@ mod tests {
         assert!(runtime.contains("param \"EXTENSION\""));
         assert!(shell.contains("(deny network*)"));
         for name in [
-            ".git", ".ssh", ".gnupg", ".aws", ".azure", ".config", ".docker", ".kube",
-            ".netrc", ".npmrc", ".pypirc",
+            ".git", ".ssh", ".gnupg", ".aws", ".azure", ".config", ".docker", ".kube", ".netrc",
+            ".npmrc", ".pypirc",
         ] {
-            assert!(shell.contains(name), "shell sandbox must deny {name}");
+            assert!(
+                shell.contains(name.trim_start_matches('.')),
+                "shell sandbox must deny {name}"
+            );
         }
         assert!(!shell.contains("boya private"));
     }

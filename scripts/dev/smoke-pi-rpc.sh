@@ -36,21 +36,17 @@ printf '%s\n' \
   '(allow signal (target self))' \
   '(allow file-read* (literal "/") (subpath "/System") (subpath "/usr") (subpath "/bin") (subpath "/sbin") (subpath "/Library/Apple") (subpath (param "WORKSPACE")))' \
   '(allow file-write* (subpath (param "WORKSPACE")))' \
-  '(deny file-read* (subpath (string-append (param "WORKSPACE") "/.git")) (regex #".*\.env(\..*)?$"))' \
-  '(deny file-write* (subpath (string-append (param "WORKSPACE") "/.git")) (regex #".*\.env(\..*)?$"))' \
+  '(deny file-read* (regex #"/\.(git|ssh|gnupg|aws|azure|config|docker|kube)(/|$)") (regex #"/\.(netrc|npmrc|pypirc)$") (regex #"/\.env(\..*)?$"))' \
+  '(deny file-write* (regex #"/\.(git|ssh|gnupg|aws|azure|config|docker|kube)(/|$)") (regex #"/\.(netrc|npmrc|pypirc)$") (regex #"/\.env(\..*)?$"))' \
   '(allow sysctl-read)' \
   '(allow mach-lookup)' \
   '(deny mach-lookup (global-name "com.apple.securityd") (global-name "com.apple.trustd.agent"))' > "$SMOKE_DIR/shell.sb"
+mkfifo "$SMOKE_DIR/input.fifo"
+: > "$SMOKE_DIR/output.jsonl"
+exec 3<> "$SMOKE_DIR/input.fifo"
 (
   cd "$SMOKE_DIR/workspace"
-  {
-    printf '%s\n' '{"type":"get_state","id":"smoke-state"}'
-    sleep 0.1
-    printf '%s\n' '{"type":"new_session","id":"smoke-new-session"}'
-    sleep 0.1
-    printf '%s\n' '{"type":"get_state","id":"smoke-new-state"}'
-  } |
-    env -i \
+  env -i \
     PATH=/usr/bin:/bin:/usr/sbin:/sbin \
     HOME="$SMOKE_DIR/private" \
     PI_CODING_AGENT_DIR="$SMOKE_DIR/private" \
@@ -79,11 +75,48 @@ printf '%s\n' \
         --no-themes \
         --no-context-files \
         --no-approve \
-        --offline |
-    tee "$SMOKE_DIR/output.jsonl" >/dev/null
-)
+        --offline < "$SMOKE_DIR/input.fifo" > "$SMOKE_DIR/output.jsonl"
+) &
+PI_PID=$!
 
-jq -e 'select(.id == "smoke-state" and .type == "response" and .success == true and .data.model.provider == "openai" and .data.model.id == "gpt-5.6-terra")' "$SMOKE_DIR/output.jsonl" >/dev/null
-jq -e 'select(.id == "smoke-new-session" and .type == "response" and .success == true and .data.cancelled == false)' "$SMOKE_DIR/output.jsonl" >/dev/null
-jq -e 'select(.id == "smoke-new-state" and .type == "response" and .success == true and .data.messageCount == 0 and (.data.sessionFile | endswith(".jsonl")))' "$SMOKE_DIR/output.jsonl" >/dev/null
+cleanup() {
+  exec 3>&-
+  kill "$PI_PID" 2>/dev/null || true
+  wait "$PI_PID" 2>/dev/null || true
+  rm -rf "$SMOKE_DIR"
+}
+trap cleanup EXIT
+
+wait_response() {
+  local request_id="$1"
+  local response=""
+  local attempts=0
+  while (( attempts < 200 )); do
+    response="$(jq -ce --arg id "$request_id" 'select(.id == $id and .type == "response")' "$SMOKE_DIR/output.jsonl" | tail -n 1 || true)"
+    if [[ -n "$response" ]]; then
+      printf '%s\n' "$response"
+      return 0
+    fi
+    if ! kill -0 "$PI_PID" 2>/dev/null; then
+      return 1
+    fi
+    sleep 0.05
+    attempts=$((attempts + 1))
+  done
+  return 1
+}
+
+request() {
+  local frame="$1"
+  local request_id="$2"
+  printf '%s\n' "$frame" >&3
+  wait_response "$request_id"
+}
+
+state="$(request '{"type":"get_state","id":"smoke-state"}' "smoke-state")"
+new_session="$(request '{"type":"new_session","id":"smoke-new-session"}' "smoke-new-session")"
+new_state="$(request '{"type":"get_state","id":"smoke-new-state"}' "smoke-new-state")"
+jq -e '.success == true and .data.model.provider == "openai" and .data.model.id == "gpt-5.6-terra"' <<<"$state" >/dev/null
+jq -e '.success == true and .data.cancelled == false' <<<"$new_session" >/dev/null
+jq -e '.success == true and .data.messageCount == 0 and (.data.sessionFile | endswith(".jsonl"))' <<<"$new_state" >/dev/null
 test -z "$(find "$SMOKE_DIR/private/sessions" -type f -name '*.jsonl' -print -quit)"
