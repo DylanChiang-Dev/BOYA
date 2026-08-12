@@ -1,8 +1,8 @@
 {
   "name": "boya-desktop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Boya Desktop — a local-first AI research workbench for humanities and social sciences.",
+  "description": "BOYA Desktop — a minimal, local-workspace Pi desktop agent.",
   "license": "UNLICENSED",
   "scripts": {
     "dev": "pnpm --filter @boya/desktop dev",
@@ -14,5 +14,5 @@
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "pnpm@9.4.0"
+  "packageManager": "pnpm@10.15.1"
 }
