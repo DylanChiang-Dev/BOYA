@@ -532,13 +532,33 @@ fn state_session(response: &Value) -> Result<(String, PathBuf), String> {
     Ok((id.to_owned(), PathBuf::from(path)))
 }
 
-fn validate_session_path(sessions_dir: &Path, path: &Path) -> Result<PathBuf, String> {
+fn validate_session_path(
+    sessions_dir: &Path,
+    path: &Path,
+    allow_missing_leaf: bool,
+) -> Result<PathBuf, String> {
     let sessions_dir = sessions_dir
         .canonicalize()
         .map_err(|error| format!("Cannot resolve BOYA session storage: {error}"))?;
-    let path = path
-        .canonicalize()
-        .map_err(|error| format!("Cannot resolve session: {error}"))?;
+    if path.extension().and_then(|value| value.to_str()) != Some("jsonl") {
+        return Err("Session path must be a JSONL file".into());
+    }
+    let path = if path.exists() {
+        path.canonicalize()
+            .map_err(|error| format!("Cannot resolve session: {error}"))?
+    } else if allow_missing_leaf {
+        let parent = path
+            .parent()
+            .ok_or_else(|| "Session path has no parent".to_string())?
+            .canonicalize()
+            .map_err(|error| format!("Cannot resolve session parent: {error}"))?;
+        let name = path
+            .file_name()
+            .ok_or_else(|| "Session path has no file name".to_string())?;
+        parent.join(name)
+    } else {
+        return Err("Session file does not exist".into());
+    };
     if !path.starts_with(&sessions_dir) || path.starts_with(sessions_dir.join("archive")) {
         return Err("Session is outside active BOYA session storage".into());
     }
@@ -765,10 +785,20 @@ fn handle_stdout(
         let restart = spawn_saved_runtime(&app, &state).and_then(|_| {
             rpc_request_inner(&state, serde_json::json!({ "type": "get_state" })).and_then(
                 |response| {
-                    let (session_id, _) = state_session(&response)?;
+                    let (session_id, session_path) = state_session(&response)?;
                     let mut inner = lock(&state)?;
+                    let sessions_dir = inner
+                        .config
+                        .as_ref()
+                        .ok_or_else(|| "Runtime is not configured".to_string())?
+                        .sessions_dir
+                        .clone();
+                    let session_path = validate_session_path(&sessions_dir, &session_path, true)?;
                     inner.snapshot.status = "ready".into();
                     inner.snapshot.session_id = Some(session_id);
+                    if let Some(config) = inner.config.as_mut() {
+                        config.session_path = Some(session_path);
+                    }
                     inner.snapshot.error = None;
                     emit_snapshot(&app, &inner.snapshot);
                     Ok(())
@@ -1100,7 +1130,7 @@ pub fn agent_start(
     fs::create_dir_all(&sessions_dir)
         .map_err(|error| format!("Cannot create BOYA session storage: {error}"))?;
     let session_path = session_path
-        .map(|path| validate_session_path(&sessions_dir, Path::new(&path)))
+        .map(|path| validate_session_path(&sessions_dir, Path::new(&path), false))
         .transpose()?;
     stop_process(&state)?;
     update_preferences(
@@ -1130,7 +1160,7 @@ pub fn agent_start(
     spawn_saved_runtime(&app, &state.inner)?;
     let response = rpc_request(&state, serde_json::json!({ "type": "get_state" }))?;
     let (session_id, session_path) = state_session(&response)?;
-    validate_session_path(&sessions_dir, &session_path)?;
+    let session_path = validate_session_path(&sessions_dir, &session_path, true)?;
     let mut inner = lock(&state.inner)?;
     inner.snapshot.session_id = Some(session_id);
     if let Some(config) = inner.config.as_mut() {
@@ -1213,7 +1243,7 @@ pub fn agent_new_session(
             .ok_or_else(|| "Runtime is not configured".to_string())?
             .sessions_dir
             .clone();
-        let path = validate_session_path(&sessions_dir, &path)?;
+        let path = validate_session_path(&sessions_dir, &path, true)?;
         inner.snapshot.session_id = Some(session_id);
         if let Some(config) = inner.config.as_mut() {
             config.session_path = Some(path.clone());
@@ -1238,14 +1268,14 @@ pub fn agent_switch_session(
         .ok_or_else(|| "Runtime is not configured".to_string())?
         .sessions_dir
         .clone();
-    let path = validate_session_path(&sessions_dir, Path::new(&path))?;
+    let path = validate_session_path(&sessions_dir, Path::new(&path), false)?;
     rpc_request(
         &state,
         serde_json::json!({ "type": "switch_session", "sessionPath": path }),
     )?;
     let response = rpc_request(&state, serde_json::json!({ "type": "get_state" }))?;
     let (session_id, session_path) = state_session(&response)?;
-    let session_path = validate_session_path(&sessions_dir, &session_path)?;
+    let session_path = validate_session_path(&sessions_dir, &session_path, false)?;
     let mut inner = lock(&state.inner)?;
     inner.snapshot.session_id = Some(session_id);
     if let Some(config) = inner.config.as_mut() {
@@ -1289,7 +1319,7 @@ pub fn agent_archive_session(
         .ok_or_else(|| "Runtime is not configured".to_string())?
         .sessions_dir
         .clone();
-    let canonical = validate_session_path(&sessions_dir, &session)?;
+    let canonical = validate_session_path(&sessions_dir, &session, false)?;
     let response = rpc_request(&state, serde_json::json!({ "type": "get_state" }))?;
     let was_active = response
         .pointer("/data/sessionFile")
@@ -1304,15 +1334,17 @@ pub fn agent_archive_session(
     }
     let response = rpc_request(&state, serde_json::json!({ "type": "get_state" }))?;
     let (session_id, path) = state_session(&response)?;
-    let path = validate_session_path(&sessions_dir, &path)?;
-    let summary = parse_session_summary(&path)?;
+    let path = validate_session_path(&sessions_dir, &path, true)?;
     let mut inner = lock(&state.inner)?;
     inner.snapshot.session_id = Some(session_id);
     if let Some(config) = inner.config.as_mut() {
-        config.session_path = Some(path);
+        config.session_path = Some(path.clone());
     }
     emit_snapshot(&app, &inner.snapshot);
-    Ok(Some(summary))
+    Ok(path
+        .exists()
+        .then(|| parse_session_summary(&path))
+        .transpose()?)
 }
 
 #[tauri::command]
@@ -1559,7 +1591,7 @@ mod tests {
         let pending = sessions.join("pending.jsonl");
         assert_eq!(
             validate_session_path(&sessions, &pending, true).unwrap(),
-            pending
+            sessions.canonicalize().unwrap().join("pending.jsonl")
         );
         assert!(validate_session_path(&sessions, &pending, false).is_err());
         assert!(validate_session_path(&sessions, &outside.join("escape.jsonl"), true).is_err());
