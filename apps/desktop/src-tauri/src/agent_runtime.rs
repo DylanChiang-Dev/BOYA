@@ -637,7 +637,28 @@ fn normalized_event(frame: &Value) -> Option<Value> {
                 })
             })
         }
-        "message_end" => normalize_message(frame),
+        "message_end" => {
+            let message = frame.get("message")?;
+            let stop_reason = message.get("stopReason").and_then(Value::as_str);
+            if matches!(stop_reason, Some("error" | "aborted")) {
+                Some(serde_json::json!({
+                    "type": "runtime.error",
+                    "message": sanitize_runtime_text(
+                        message
+                            .get("errorMessage")
+                            .and_then(Value::as_str)
+                            .unwrap_or(if stop_reason == Some("aborted") {
+                                "The current turn was stopped"
+                            } else {
+                                "Pi could not complete the response"
+                            }),
+                        None,
+                    )
+                }))
+            } else {
+                normalize_message(frame)
+            }
+        }
         "tool_execution_start" => Some(serde_json::json!({
             "type": "tool.updated",
             "tool": {
@@ -1130,7 +1151,7 @@ pub fn agent_start(
     fs::create_dir_all(&sessions_dir)
         .map_err(|error| format!("Cannot create BOYA session storage: {error}"))?;
     let session_path = session_path
-        .map(|path| validate_session_path(&sessions_dir, Path::new(&path), false))
+        .map(|path| validate_session_path(&sessions_dir, Path::new(&path), true))
         .transpose()?;
     stop_process(&state)?;
     update_preferences(
@@ -1550,7 +1571,25 @@ mod tests {
         assert!(runtime.contains("param \"PRIVATE\""));
         assert!(runtime.contains("param \"EXTENSION\""));
         assert!(shell.contains("(deny network*)"));
+        for name in [
+            ".git", ".ssh", ".gnupg", ".aws", ".azure", ".config", ".docker", ".kube",
+            ".netrc", ".npmrc", ".pypirc",
+        ] {
+            assert!(shell.contains(name), "shell sandbox must deny {name}");
+        }
         assert!(!shell.contains("boya private"));
+    }
+
+    #[test]
+    fn crash_restart_allowance_is_consumed_once_for_the_app_lifetime() {
+        let mut inner = RuntimeInner::default();
+
+        assert!(inner.take_crash_restart_allowance());
+        assert!(!inner.take_crash_restart_allowance());
+
+        inner.desired_running = false;
+        inner.desired_running = true;
+        assert!(!inner.take_crash_restart_allowance());
     }
 
     #[test]
@@ -1640,6 +1679,25 @@ mod tests {
     }
 
     #[test]
+    fn surfaces_assistant_provider_errors_as_runtime_errors() {
+        let frame = serde_json::json!({
+            "type": "message_end",
+            "message": {
+                "role": "assistant",
+                "stopReason": "error",
+                "errorMessage": "Invalid API key",
+                "timestamp": 100,
+                "content": []
+            }
+        });
+
+        assert_eq!(
+            normalized_event(&frame).unwrap(),
+            serde_json::json!({ "type": "runtime.error", "message": "Invalid API key" })
+        );
+    }
+
+    #[test]
     fn rejects_reserved_rpc_commands_before_they_reach_pi() {
         assert!(validate_prompt_message("/model").is_err());
         assert!(validate_prompt_message("  !pwd").is_err());
@@ -1669,6 +1727,19 @@ mod tests {
         let workspace = temp_dir("shell-sandbox-workspace").canonicalize().unwrap();
         let outside = temp_dir("shell-sandbox-outside").canonicalize().unwrap();
         fs::write(workspace.join(".env"), "OPENAI_API_KEY=sk-hidden").unwrap();
+        for (directory, file) in [
+            (".aws", "credentials"),
+            (".azure", "token"),
+            (".config", "credentials"),
+            (".docker", "config.json"),
+            (".kube", "config"),
+        ] {
+            fs::create_dir_all(workspace.join(directory)).unwrap();
+            fs::write(workspace.join(directory).join(file), "secret").unwrap();
+        }
+        for file in [".netrc", ".npmrc", ".pypirc"] {
+            fs::write(workspace.join(file), "secret").unwrap();
+        }
         fs::write(outside.join("private.txt"), "private").unwrap();
         let profile = workspace.join("shell.sb");
         fs::write(&profile, shell_sandbox_profile(&workspace)).unwrap();
@@ -1694,6 +1765,14 @@ mod tests {
         for command in [
             format!("cat '{}'", outside.join("private.txt").display()),
             "cat .env".to_string(),
+            "cat .aws/credentials".to_string(),
+            "cat .azure/token".to_string(),
+            "cat .config/credentials".to_string(),
+            "cat .docker/config.json".to_string(),
+            "cat .kube/config".to_string(),
+            "cat .netrc".to_string(),
+            "cat .npmrc".to_string(),
+            "cat .pypirc".to_string(),
             "/usr/bin/security find-generic-password -s dev.dylanchiang.boya.openai -a openai -w"
                 .to_string(),
             "/usr/bin/curl --connect-timeout 1 https://example.com".to_string(),
