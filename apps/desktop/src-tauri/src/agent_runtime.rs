@@ -1549,6 +1549,25 @@ mod tests {
     }
 
     #[test]
+    fn validates_unwritten_pi_session_paths_without_weakening_the_boundary() {
+        let root = temp_dir("session-paths");
+        let sessions = root.join("sessions");
+        let outside = root.join("outside");
+        fs::create_dir_all(&sessions).unwrap();
+        fs::create_dir_all(&outside).unwrap();
+
+        let pending = sessions.join("pending.jsonl");
+        assert_eq!(
+            validate_session_path(&sessions, &pending, true).unwrap(),
+            pending
+        );
+        assert!(validate_session_path(&sessions, &pending, false).is_err());
+        assert!(validate_session_path(&sessions, &outside.join("escape.jsonl"), true).is_err());
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn redacts_provider_secrets_and_auth_headers() {
         let text = "OPENAI_API_KEY=sk-test Authorization: Bearer token-value";
         let clean = sanitize_runtime_text(text, Some("sk-test"));
