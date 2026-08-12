@@ -151,4 +151,46 @@ describe("PiEventNormalizer", () => {
       normalizer.accept({ type: "extension_error", error: "policy failed" }),
     ).toEqual([{ type: "runtime.error", message: "policy failed" }]);
   });
+
+  it("keeps multiple completed messages distinct", () => {
+    const normalizer = new PiEventNormalizer();
+    const first = normalizer.accept({
+      type: "message_end",
+      message: { role: "assistant", timestamp: 1, content: [{ type: "text", text: "First" }] },
+    });
+    const second = normalizer.accept({
+      type: "message_end",
+      message: { role: "assistant", timestamp: 2, content: [{ type: "text", text: "Second" }] },
+    });
+
+    expect(first[0]).toMatchObject({ type: "message.completed" });
+    expect(second[0]).toMatchObject({ type: "message.completed" });
+    if (first[0]?.type !== "message.completed" || second[0]?.type !== "message.completed") {
+      throw new Error("Expected completed messages");
+    }
+    expect(first[0].message.id).not.toBe(second[0].message.id);
+  });
+
+  it("surfaces provider failures and aborted turns as runtime errors", () => {
+    const normalizer = new PiEventNormalizer();
+
+    expect(normalizer.accept({
+      type: "message_end",
+      message: {
+        role: "assistant",
+        stopReason: "error",
+        errorMessage: "Invalid API key",
+        content: [],
+      },
+    })).toEqual([{ type: "runtime.error", message: "Invalid API key" }]);
+
+    expect(normalizer.accept({
+      type: "message_end",
+      message: {
+        role: "assistant",
+        stopReason: "aborted",
+        content: [],
+      },
+    })).toEqual([{ type: "runtime.error", message: "The current turn was stopped" }]);
+  });
 });
