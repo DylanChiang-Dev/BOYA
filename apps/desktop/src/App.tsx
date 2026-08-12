@@ -115,7 +115,12 @@ function ToolRow({ tool }: { tool: ToolActivity }) {
 function ApprovalBar({ approval, client }: { approval: ApprovalRequest; client: DesktopAgentClient }) {
   function reply(value: ApprovalReply) {
     void client.replyApproval(value)
-      .then(() => useAgentStore.setState({ approval: null }))
+      .then(() => useAgentStore.setState((state) => {
+        const approvalQueue = state.approvalQueue.filter(
+          (queued) => queued.requestId !== approval.requestId,
+        );
+        return { approvalQueue, approval: approvalQueue[0] ?? null };
+      }))
       .catch((error) => useAgentStore.setState({
         error: error instanceof Error ? error.message : String(error),
       }));
@@ -169,6 +174,7 @@ function SettingsPanel({ client, onClose }: { client: DesktopAgentClient; onClos
       messages: [],
       tools: [],
       approval: null,
+      approvalQueue: [],
     });
     onClose();
   }
@@ -177,7 +183,7 @@ function SettingsPanel({ client, onClose }: { client: DesktopAgentClient; onClos
     <header><h2>設定</h2><IconButton label="關閉設定" onClick={onClose}><X size={18} /></IconButton></header>
     <div className="settings-section"><h3>OpenAI API Key</h3><div className="key-ready"><KeyRound size={16} /><span>{store.keyConfigured ? "已儲存在 macOS Keychain" : "尚未設定"}</span></div><label className="field"><span>更新 Key</span><input aria-label="更新 OpenAI API Key" type="password" value={newKey} onChange={(event) => setNewKey(event.target.value)} placeholder="sk-..." /></label><div className="button-row"><button className="secondary-button" type="button" disabled={busy || newKey.length < 12} onClick={() => void run(updateKey)}>更新</button><button className="danger-button" type="button" disabled={busy || store.snapshot.running} onClick={() => void run(removeKey)}>移除 Key</button></div></div>
     <div className="settings-section"><h3>模型</h3><select aria-label="模型" value={store.snapshot.model} disabled={busy || store.snapshot.running} onChange={(event) => { const model = event.target.value; void run(async () => { await client.setModel(model); useAgentStore.setState((state) => ({ snapshot: { ...state.snapshot, model } })); }); }}>{store.models.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select></div>
-    <div className="settings-section"><h3>工作資料夾</h3><div className="workspace-path">{store.workspace}</div><button type="button" className="secondary-button" disabled={busy || store.snapshot.running} onClick={() => void run(async () => { const path = await client.pickWorkspace(); if (!path) return; const snapshot = await client.start(path); useAgentStore.setState({ workspace: path, snapshot, sessions: [], activePath: null, messages: [], tools: [], approval: null }); await store.refreshSessions(client); })}>{<FolderOpen size={16} />}更換資料夾</button></div>
+    <div className="settings-section"><h3>工作資料夾</h3><div className="workspace-path">{store.workspace}</div><button type="button" className="secondary-button" disabled={busy || store.snapshot.running} onClick={() => void run(async () => { const path = await client.pickWorkspace(); if (!path) return; const snapshot = await client.start(path); useAgentStore.setState({ workspace: path, snapshot, sessions: [], activePath: null, messages: [], tools: [], approval: null, approvalQueue: [] }); await store.refreshSessions(client); })}>{<FolderOpen size={16} />}更換資料夾</button></div>
     <footer>BOYA {store.versions.boya}<span>Pi {store.versions.pi}</span></footer>
   </section></div>;
 }
@@ -195,7 +201,7 @@ function Workbench({ client }: { client: DesktopAgentClient }) {
   async function createSession() {
     try {
       await client.newSession();
-      useAgentStore.setState({ activePath: null, messages: [], streamingText: "", tools: [], approval: null });
+      useAgentStore.setState({ activePath: null, messages: [], streamingText: "", tools: [], approval: null, approvalQueue: [] });
     } catch (error) { useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }); }
   }
 
@@ -235,16 +241,37 @@ function Workbench({ client }: { client: DesktopAgentClient }) {
 
 export function App({ client = defaultClient }: AppProps) {
   const store = useAgentStore();
+  const initializationRef = useRef<{ client: DesktopAgentClient; active: boolean } | null>(null);
+  const effectVersionRef = useRef(0);
   useEffect(() => {
-    resetAgentStore();
+    effectVersionRef.current += 1;
+    const effectVersion = effectVersionRef.current;
     const unsubscribe = client.subscribe((event) => {
       useAgentStore.getState().handleEvent(event);
       if (event.type === "runtime.settled") {
         void useAgentStore.getState().refreshSessions(client).catch((error) => useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }));
       }
     });
-    void useAgentStore.getState().initialize(client).catch((error) => useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }));
-    return unsubscribe;
+    if (initializationRef.current?.client !== client) {
+      if (initializationRef.current) initializationRef.current.active = false;
+      const initialization = { client, active: true };
+      initializationRef.current = initialization;
+      resetAgentStore();
+      void useAgentStore.getState().initialize(client, () => initialization.active)
+        .catch((error) => {
+          if (initialization.active) {
+            useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) });
+          }
+        });
+    }
+    return () => {
+      unsubscribe();
+      queueMicrotask(() => {
+        if (effectVersionRef.current === effectVersion && initializationRef.current?.client === client) {
+          initializationRef.current.active = false;
+        }
+      });
+    };
   }, [client]);
   if (store.booting) return <div className="boot-screen"><LoaderCircle className="spin" size={22} />正在啟動 Pi</div>;
   return store.configured ? <Workbench client={client} /> : <Setup client={client} />;
