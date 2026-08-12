@@ -14,15 +14,13 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": r("./src"),
-      "@boya/shared": r("../../packages/shared/src/index.ts"),
-      "@boya/sdk/mock-server": r("../../packages/sdk/src/mockServer.ts"),
       "@boya/sdk": r("../../packages/sdk/src/index.ts"),
     },
   },
   test: {
     globals: true,
     environment: "jsdom",
-    setupFiles: ["./src/test/setup.ts"],
+    setupFiles: ["./src/testSetup.ts"],
     css: false,
   },
 });

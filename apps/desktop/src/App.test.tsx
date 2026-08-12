@@ -11,6 +11,7 @@ import type {
 } from "@boya/sdk";
 import { App } from "./App";
 import type { DesktopAgentClient } from "./lib/agentClient";
+import { resetAgentStore, useAgentStore } from "./lib/agentStore";
 
 class FakeClient implements DesktopAgentClient {
   keyConfigured = false;
@@ -68,6 +69,28 @@ class FakeClient implements DesktopAgentClient {
 }
 
 describe("BOYA Desktop", () => {
+  it("ignores initialization failures from a replaced client", async () => {
+    resetAgentStore();
+    const client = new FakeClient();
+    client.keyConfigured = true;
+    client.workspace = "/Users/research/old-workspace";
+    let rejectStart!: (error: Error) => void;
+    client.start = vi.fn(() => new Promise<RuntimeSnapshot>((_resolve, reject) => {
+      rejectStart = reject;
+    }));
+    let current = true;
+
+    const initialization = useAgentStore.getState().initialize(client, () => current);
+    await waitFor(() => expect(client.start).toHaveBeenCalled());
+    current = false;
+    resetAgentStore();
+    rejectStart(new Error("stale client failed"));
+    await initialization;
+
+    expect(useAgentStore.getState().booting).toBe(true);
+    expect(useAgentStore.getState().error).toBeNull();
+  });
+
   it("completes first-run setup in the workspace", async () => {
     const client = new FakeClient();
     render(<App client={client} />);

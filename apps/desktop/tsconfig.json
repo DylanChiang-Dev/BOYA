@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "Bundler",
@@ -20,9 +20,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@boya/shared": ["../../packages/shared/src/index.ts"],
-      "@boya/sdk": ["../../packages/sdk/src/index.ts"],
-      "@boya/sdk/mock-server": ["../../packages/sdk/src/mockServer.ts"]
+      "@boya/sdk": ["../../packages/sdk/src/index.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]

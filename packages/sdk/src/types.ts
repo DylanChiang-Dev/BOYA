@@ -70,13 +70,12 @@ export interface AgentRuntimeClient {
   prompt(message: string): Promise<void>;
   abort(): Promise<void>;
   listSessions(): Promise<SessionSummary[]>;
-  newSession(): Promise<SessionSummary>;
+  newSession(): Promise<void>;
   switchSession(path: string): Promise<void>;
   renameSession(path: string, title: string): Promise<void>;
-  archiveSession(path: string): Promise<void>;
+  archiveSession(path: string): Promise<SessionSummary | null>;
   getMessages(): Promise<ChatMessage[]>;
   listModels(): Promise<ModelInfo[]>;
   setModel(modelId: string): Promise<void>;
   replyApproval(reply: ApprovalReply): Promise<void>;
 }
-

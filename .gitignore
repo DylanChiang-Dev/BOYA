@@ -55,12 +55,12 @@ secrets/
 # Bundled sidecar binaries (fetched per-platform; too large for git)
 apps/desktop/src-tauri/binaries/
 
-# Third-party skill packs (fetched by scripts/dev/fetch-skills.sh)
+# Legacy local skill cache is preserved but unused by BOYA Desktop 0.2
 runtime/skills/external/
 
 # Local demo recordings (too large for git)
 videos/
 
-# Local video-production tooling (fetched hyperframes skill packs)
+# Local agent and video-production tooling
 .agents/
 skills-lock.json

@@ -1,6 +1,6 @@
 [package]
 name = "boya-desktop"
-version = "0.1.0"
+version = "0.2.0"
 description = "Boya Desktop"
 authors = ["Dylan Chiang", "Boya Desktop contributors"]
 edition = "2021"
@@ -14,15 +14,11 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
-tauri-plugin-shell = "2"
 tauri-plugin-single-instance = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# Already in the tree via tauri — used directly for stall timeouts on uv setup.
-tokio = { version = "1", features = ["time"] }
 tauri-plugin-dialog = "2"
-tauri-plugin-clipboard-manager = "2"
-getrandom = "0.4.3"
-opener = { version = "0.8.5", features = ["reveal"] }
-rusqlite = { version = "0.32", features = ["bundled"] }
-reqwest = { version = "0.13", default-features = false, features = ["blocking", "native-tls"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+security-framework = "3.7"
+security-framework-sys = "2.17"

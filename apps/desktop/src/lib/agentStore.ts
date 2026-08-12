@@ -84,6 +84,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       set({ configured: true, booting: false, snapshot: ready, sessions, models });
       if (sessions[0]) await get().selectSession(client, sessions[0].path);
     } catch (error) {
+      if (!isCurrent()) return;
       set({ booting: false, error: error instanceof Error ? error.message : String(error) });
     }
   },

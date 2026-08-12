@@ -1,16 +1,17 @@
-# apps/desktop/src-tauri
+# Tauri host
 
-The Rust side of the Tauri app.
+This directory contains the native boundary for BOYA Desktop 0.2.
 
 Responsibilities:
 
-- Native commands exposed to the frontend (filesystem within the workspace, OS keychain
-  access for API keys, etc.).
-- Spawning and supervising sidecars (the OpenCode runtime; later the Jupyter Kernel Gateway).
-- Packaging configuration — targets: `dmg` / `app` (macOS), `nsis` / `msi` (Windows).
-- Auto-update wiring (Tauri updater, GitHub Releases + signed `latest.json`) — later.
+- Store the OpenAI key in macOS Keychain.
+- Start and supervise the pinned Pi RPC process.
+- Normalize Pi JSONL events into the single `agent-runtime-event` channel.
+- Keep Pi sessions in new app-private storage and archive them recoverably.
+- Generate and enforce the macOS runtime and shell sandbox profiles.
+- Expose the backend-neutral `AgentRuntimeClient` commands used by React.
 
-Keep this thin: system capabilities only, no heavy computation. Heavy work goes to
-`runtime/manager` and sidecars.
-
-To be added when build tooling is scaffolded: `Cargo.toml`, `tauri.conf.json`, `src/main.rs`.
+Pi is never given an API key through arguments or the environment. The
+app-private `auth.json` stores only a fixed Keychain lookup command. Runtime
+policy lives in `agent-runtime/boya-policy.ts`; unavailable sandbox or approval
+bridges fail closed.

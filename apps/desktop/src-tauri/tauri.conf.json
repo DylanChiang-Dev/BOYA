@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Boya Desktop",
-  "version": "0.1.0",
+  "productName": "BOYA Desktop",
+  "version": "0.2.0",
   "identifier": "dev.dylanchiang.boya",
   "build": {
     "frontendDist": "../dist",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Boya Desktop",
+        "title": "BOYA Desktop",
         "width": 1440,
         "height": 900,
         "minWidth": 1000,
@@ -24,26 +24,26 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' data: asset:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost"
     }
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "externalBin": ["binaries/opencode", "binaries/uv"],
+    "targets": ["app", "dmg"],
     "macOS": {
       "minimumSystemVersion": "13.0"
     },
     "resources": {
-      "../../../runtime/skills/external/boya": "skills-boya/",
-      "../../../runtime/skills/external/anthropic-skills": "skills-office/",
-      "../../../runtime/skills/core/traceability-review": "skills-core/traceability-review/",
-      "../../../runtime/skills/core/stats-integrity": "skills-core/stats-integrity/",
-      "../../../runtime/skills/core/large-file": "skills-core/large-file/",
-      "../../../runtime/skills/core/publication-figures": "skills-core/publication-figures/",
-      "../../../runtime/harness": "harness/",
-      "../../../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md",
-      "../../../LICENSES/open-science-MIT.txt": "LICENSES/open-science-MIT.txt"
+      "binaries/pi-aarch64-apple-darwin": "binaries/pi-aarch64-apple-darwin",
+      "binaries/package.json": "binaries/package.json",
+      "binaries/photon_rs_bg.wasm": "binaries/photon_rs_bg.wasm",
+      "binaries/theme/dark.json": "binaries/theme/dark.json",
+      "binaries/theme/light.json": "binaries/theme/light.json",
+      "binaries/theme/theme-schema.json": "binaries/theme/theme-schema.json",
+      "agent-runtime/boya-policy.ts": "agent-runtime/boya-policy.ts",
+      "../../../LICENSES/open-science-MIT.txt": "LICENSES/open-science-MIT.txt",
+      "../../../LICENSES/pi-coding-agent-MIT.txt": "LICENSES/pi-coding-agent-MIT.txt",
+      "../../../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md"
     },
     "icon": [
       "icons/32x32.png",

@@ -1,15 +1,18 @@
 # packages/sdk
 
-`OpenCodeClient` — the single boundary between the app and the agent runtime.
+Backend-neutral contracts between the BOYA frontend and its bundled agent
+runtime.
 
-The UI never calls OpenCode directly. This package wraps the transport so the runtime
-can change without touching the frontend:
+`AgentRuntimeClient` exposes runtime lifecycle, prompt and abort, session CRUD,
+history, models, approvals, and normalized event subscription. React does not
+import Pi RPC types or know how the native host transports those operations.
 
-- Talks to a running `opencode serve` over its HTTP + SSE API:
-  - `POST /session` (create), `POST /session/:id/prompt_async` (send prompt).
-  - `GET /event` (SSE) — `message.part.updated` (text / tool parts), `session.idle`, `session.error`.
-- Normalizes OpenCode's idempotent "updated" events into a small app-facing event union
-  (`text.updated`, `tool.updated`, `session.idle`, `error`) so the UI upserts by part/call id.
-- Pins the supported OpenCode version (`OPENCODE_VERSION`).
+The package also provides two protocol helpers used by tests and native bridge
+development:
 
-`mock-server.ts` provides an OpenCode-protocol server for tests and local dev.
+- `JsonlDecoder` buffers strict LF-delimited JSON frames.
+- `PiEventNormalizer` converts Pi events into `RuntimeEvent` values without
+  exposing raw Pi structures to application code.
+
+Runtime acquisition, pinning, process management, Keychain access, and sandbox
+policy belong to the Tauri host rather than this package.
