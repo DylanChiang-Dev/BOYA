@@ -1,4 +1,5 @@
 mod agent_runtime;
+mod provider;
 
 use agent_runtime::AgentRuntimeState;
 use tauri::Manager;
@@ -18,6 +19,11 @@ pub fn run() {
             agent_runtime::agent_api_key_status,
             agent_runtime::agent_set_api_key,
             agent_runtime::agent_remove_api_key,
+            agent_runtime::agent_get_provider_settings,
+            agent_runtime::agent_save_provider_settings,
+            agent_runtime::agent_save_workspace,
+            agent_runtime::agent_fetch_provider_models,
+            agent_runtime::agent_parse_ccswitch_import,
             agent_runtime::agent_snapshot,
             agent_runtime::agent_start,
             agent_runtime::agent_stop,

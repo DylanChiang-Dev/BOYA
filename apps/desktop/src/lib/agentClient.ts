@@ -5,6 +5,10 @@ import type {
   ApprovalReply,
   ChatMessage,
   ModelInfo,
+  ProviderImport,
+  ProviderModel,
+  ProviderSettings,
+  ProviderSettingsSnapshot,
   RuntimeEvent,
   RuntimeSnapshot,
   SessionSummary,
@@ -14,6 +18,11 @@ export interface DesktopAgentClient extends AgentRuntimeClient {
   apiKeyStatus(): Promise<boolean>;
   setApiKey(key: string): Promise<void>;
   removeApiKey(): Promise<void>;
+  getProviderSettings(): Promise<ProviderSettingsSnapshot>;
+  saveProviderSettings(settings: ProviderSettings, apiKey?: string): Promise<ProviderSettingsSnapshot>;
+  saveWorkspace(workspace: string): Promise<string>;
+  fetchProviderModels(baseUrl: string, apiKey?: string): Promise<ProviderModel[]>;
+  parseCCSwitchImport(link: string): Promise<ProviderImport>;
   pickWorkspace(): Promise<string | null>;
   versions(): Promise<{ boya: string; pi: string }>;
 }
@@ -37,6 +46,17 @@ export class TauriAgentClient implements DesktopAgentClient {
   apiKeyStatus() { return invoke<boolean>("agent_api_key_status"); }
   setApiKey(key: string) { return invoke<void>("agent_set_api_key", { key }); }
   removeApiKey() { return invoke<void>("agent_remove_api_key"); }
+  getProviderSettings() { return invoke<ProviderSettingsSnapshot>("agent_get_provider_settings"); }
+  saveProviderSettings(settings: ProviderSettings, apiKey?: string) {
+    return invoke<ProviderSettingsSnapshot>("agent_save_provider_settings", { settings, apiKey });
+  }
+  saveWorkspace(workspace: string) { return invoke<string>("agent_save_workspace", { workspace }); }
+  fetchProviderModels(baseUrl: string, apiKey?: string) {
+    return invoke<ProviderModel[]>("agent_fetch_provider_models", { baseUrl, apiKey });
+  }
+  parseCCSwitchImport(link: string) {
+    return invoke<ProviderImport>("agent_parse_ccswitch_import", { link });
+  }
   pickWorkspace() { return invoke<string | null>("agent_pick_workspace"); }
   versions() { return invoke<{ boya: string; pi: string }>("agent_versions"); }
   snapshot() { return invoke<RuntimeSnapshot>("agent_snapshot"); }

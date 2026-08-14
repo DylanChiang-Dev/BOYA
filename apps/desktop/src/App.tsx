@@ -3,11 +3,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   Archive,
-  Check,
   ChevronDown,
   ChevronRight,
   FolderOpen,
-  KeyRound,
   LoaderCircle,
   MessageSquarePlus,
   MoreHorizontal,
@@ -18,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import type { ApprovalReply, ApprovalRequest, SessionSummary, ToolActivity } from "@boya/sdk";
+import { ProviderSettingsPanel } from "./ProviderSettingsPanel";
 import { agentClient as defaultClient, type DesktopAgentClient } from "./lib/agentClient";
 import { resetAgentStore, useAgentStore } from "./lib/agentStore";
 
@@ -36,7 +35,6 @@ function IconButton({ label, children, onClick, disabled }: {
 
 function Setup({ client }: { client: DesktopAgentClient }) {
   const store = useAgentStore();
-  const [key, setKey] = useState("");
   const [workspace, setWorkspace] = useState(store.workspace);
   const [busy, setBusy] = useState(false);
 
@@ -51,14 +49,24 @@ function Setup({ client }: { client: DesktopAgentClient }) {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (!workspace) return;
     setBusy(true);
     try {
-      if (!store.keyConfigured) await client.setApiKey(key);
-      const snapshot = await client.start(workspace ?? undefined);
+      const savedWorkspace = await client.saveWorkspace(workspace);
+      if (!store.keyConfigured) {
+        useAgentStore.setState({
+          configured: true,
+          booting: false,
+          workspace: savedWorkspace,
+          snapshot: { ...store.snapshot, status: "offline", workspace: savedWorkspace, sessionId: null, running: false },
+        });
+        return;
+      }
+      const snapshot = await client.start(savedWorkspace);
       useAgentStore.setState({ configured: true, keyConfigured: true, workspace: snapshot.workspace, snapshot, booting: false });
       const [sessions, models] = await Promise.all([client.listSessions(), client.listModels()]);
       useAgentStore.setState({ sessions, models });
-      if (sessions[0]) await store.selectSession(client, sessions[0].path);
+      if (sessions[0]) await useAgentStore.getState().selectSession(client, sessions[0].path);
     } catch (error) {
       useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) });
     } finally {
@@ -71,14 +79,12 @@ function Setup({ client }: { client: DesktopAgentClient }) {
       <form className="setup-panel" onSubmit={submit}>
         <div className="brand-mark">B</div>
         <h1>設定 BOYA</h1>
-        <p>連接 OpenAI，並指定 Pi 可以工作的本機資料夾。</p>
-        {!store.keyConfigured && <label className="field"><span>OpenAI API Key</span><input aria-label="OpenAI API Key" type="password" value={key} onChange={(event) => setKey(event.target.value)} placeholder="sk-..." autoComplete="off" /></label>}
-        {store.keyConfigured && <div className="key-ready"><KeyRound size={16} /><span>OpenAI API Key 已儲存在 Keychain</span><Check size={16} /></div>}
+        <p>先指定 Pi 可以工作的本機資料夾；API Key 與 Base URL 可進入後在設定中保存。</p>
         <div className="folder-field">
           <button type="button" className="secondary-button" onClick={chooseFolder}><FolderOpen size={17} />選擇資料夾</button>
           <span>{workspace ?? "尚未選擇工作資料夾"}</span>
         </div>
-        <button className="primary-button" type="submit" disabled={busy || !workspace || (!store.keyConfigured && key.length < 12)}>{busy ? <LoaderCircle className="spin" size={17} /> : null}開始使用</button>
+        <button className="primary-button" type="submit" disabled={busy || !workspace}>{busy ? <LoaderCircle className="spin" size={17} /> : null}進入 BOYA</button>
         {store.error && <div className="error-banner">{store.error}</div>}
       </form>
     </main>
@@ -137,56 +143,6 @@ function ApprovalBar({ approval, client }: { approval: ApprovalRequest; client: 
   </div>;
 }
 
-function SettingsPanel({ client, onClose }: { client: DesktopAgentClient; onClose: () => void }) {
-  const store = useAgentStore();
-  const [newKey, setNewKey] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  async function run(action: () => Promise<void>) {
-    setBusy(true);
-    useAgentStore.setState({ error: null });
-    try {
-      await action();
-    } catch (error) {
-      useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function updateKey() {
-    await client.setApiKey(newKey);
-    await client.stop();
-    const snapshot = await client.start(store.workspace ?? undefined, store.activePath ?? undefined);
-    const models = await client.listModels();
-    useAgentStore.setState({ keyConfigured: true, snapshot, models });
-    setNewKey("");
-  }
-
-  async function removeKey() {
-    await client.stop();
-    await client.removeApiKey();
-    useAgentStore.setState({
-      keyConfigured: false,
-      configured: false,
-      snapshot: { ...store.snapshot, status: "offline", sessionId: null, running: false },
-      activePath: null,
-      messages: [],
-      tools: [],
-      approval: null,
-      approvalQueue: [],
-    });
-    onClose();
-  }
-
-  return <div className="modal-backdrop" role="presentation"><section className="settings-panel" role="dialog" aria-modal="true" aria-label="設定">
-    <header><h2>設定</h2><IconButton label="關閉設定" onClick={onClose}><X size={18} /></IconButton></header>
-    <div className="settings-section"><h3>OpenAI API Key</h3><div className="key-ready"><KeyRound size={16} /><span>{store.keyConfigured ? "已儲存在 macOS Keychain" : "尚未設定"}</span></div><label className="field"><span>更新 Key</span><input aria-label="更新 OpenAI API Key" type="password" value={newKey} onChange={(event) => setNewKey(event.target.value)} placeholder="sk-..." /></label><div className="button-row"><button className="secondary-button" type="button" disabled={busy || newKey.length < 12} onClick={() => void run(updateKey)}>更新</button><button className="danger-button" type="button" disabled={busy || store.snapshot.running} onClick={() => void run(removeKey)}>移除 Key</button></div></div>
-    <div className="settings-section"><h3>模型</h3><select aria-label="模型" value={store.snapshot.model} disabled={busy || store.snapshot.running} onChange={(event) => { const model = event.target.value; void run(async () => { await client.setModel(model); useAgentStore.setState((state) => ({ snapshot: { ...state.snapshot, model } })); }); }}>{store.models.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select></div>
-    <div className="settings-section"><h3>工作資料夾</h3><div className="workspace-path">{store.workspace}</div><button type="button" className="secondary-button" disabled={busy || store.snapshot.running} onClick={() => void run(async () => { const path = await client.pickWorkspace(); if (!path) return; const snapshot = await client.start(path); useAgentStore.setState({ workspace: path, snapshot, sessions: [], activePath: null, messages: [], tools: [], approval: null, approvalQueue: [] }); await store.refreshSessions(client); })}>{<FolderOpen size={16} />}更換資料夾</button></div>
-    <footer>BOYA {store.versions.boya}<span>Pi {store.versions.pi}</span></footer>
-  </section></div>;
-}
 
 function Workbench({ client }: { client: DesktopAgentClient }) {
   const store = useAgentStore();
@@ -209,6 +165,10 @@ function Workbench({ client }: { client: DesktopAgentClient }) {
     event.preventDefault();
     const text = input.trim();
     if (!text || store.snapshot.running) return;
+    if (store.snapshot.status !== "ready") {
+      useAgentStore.setState({ error: "請先到設定配置 API Key 與模型" });
+      return;
+    }
     setInput("");
     useAgentStore.setState((state) => ({ messages: [...state.messages, { id: `local-${Date.now()}`, role: "user", content: text, createdAt: Date.now() }], streamingText: "", tools: [], error: null, snapshot: { ...state.snapshot, running: true } }));
     try { await client.prompt(text); } catch (error) { useAgentStore.setState((state) => ({ error: error instanceof Error ? error.message : String(error), snapshot: { ...state.snapshot, running: false } })); }
@@ -234,7 +194,7 @@ function Workbench({ client }: { client: DesktopAgentClient }) {
       <form className="composer" onSubmit={submit}><textarea aria-label="訊息" value={input} onChange={(event) => setInput(event.target.value)} placeholder="傳訊息給 Pi" rows={1} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />{store.snapshot.running ? <IconButton label="停止" onClick={() => void client.abort().catch((error) => useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }))}><Square size={16} fill="currentColor" /></IconButton> : <button className="send-button" type="submit" aria-label="傳送" disabled={!input.trim()}><Send size={17} /></button>}</form>
     </main>
     {store.approval && <ApprovalBar approval={store.approval} client={client} />}
-    {settings && <SettingsPanel client={client} onClose={() => setSettings(false)} />}
+    {settings && <ProviderSettingsPanel client={client} onClose={() => setSettings(false)} />}
     {renaming && <div className="modal-backdrop"><form className="rename-dialog" onSubmit={async (event) => { event.preventDefault(); try { await client.renameSession(renaming.path, renameValue); setRenaming(null); await store.refreshSessions(client); await store.selectSession(client, renaming.path); } catch (error) { useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }); } }}><h2>重新命名對話</h2><label className="field"><span>對話名稱</span><input aria-label="對話名稱" autoFocus value={renameValue} onChange={(event) => setRenameValue(event.target.value)} /></label><div className="button-row"><button type="button" className="secondary-button" onClick={() => setRenaming(null)}>取消</button><button type="submit" className="primary-button compact">儲存名稱</button></div></form></div>}
   </div>;
 }

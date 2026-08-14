@@ -1,5 +1,7 @@
 # Progress
 
+2026-08-14 · fix(0.2): fixed the macOS folder picker deadlock by moving blocking dialog work off the Tauri main thread; added persistent Keychain-backed provider settings with official/custom OpenAI-compatible Base URL, model discovery, CC Switch import, model selection, and safe runtime/provider switching with secret redaction and startup rollback.
+
 2026-08-13 · feat(0.2): rebuilt BOYA Desktop as a minimal Pi desktop agent for macOS Apple Silicon; replaced OpenCode and the research workbench with a pinned Pi RPC runtime, Keychain-backed OpenAI access, recoverable multi-session chat, normalized SDK contracts, and fail-closed workspace/shell sandbox policy.
 
 2026-07-14 · feat(workflow): aligned the bundled workflow with the canonical BOYA Skills v2.1.0 manifest; Desktop now verifies and deploys all 17 skills, including claim-audit and opt-in research-record, while preserving the 0.1.0 Preview product boundary.

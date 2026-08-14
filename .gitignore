@@ -55,9 +55,6 @@ secrets/
 # Bundled sidecar binaries (fetched per-platform; too large for git)
 apps/desktop/src-tauri/binaries/
 
-# Legacy local skill cache is preserved but unused by BOYA Desktop 0.2
-runtime/skills/external/
-
 # Local demo recordings (too large for git)
 videos/
 

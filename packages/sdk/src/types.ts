@@ -47,6 +47,33 @@ export interface ModelInfo {
   contextWindow?: number;
   supportsThinking?: boolean;
 }
+export type ProviderMode = "official" | "custom";
+
+export interface ProviderModel {
+  id: string;
+  name: string;
+  enabled: boolean;
+}
+
+export interface ProviderSettings {
+  mode: ProviderMode;
+  name: string;
+  baseUrl: string;
+  models: ProviderModel[];
+}
+
+export interface ProviderSettingsSnapshot {
+  settings: ProviderSettings;
+  keyConfigured: boolean;
+}
+
+export interface ProviderImport {
+  name: string;
+  baseUrl: string;
+  apiKey?: string;
+  models: ProviderModel[];
+  warning?: string;
+}
 
 export type RuntimeEvent =
   | { type: "snapshot.updated"; snapshot: RuntimeSnapshot }

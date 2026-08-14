@@ -5,6 +5,10 @@ import type {
   ApprovalReply,
   ChatMessage,
   ModelInfo,
+  ProviderImport,
+  ProviderModel,
+  ProviderSettings,
+  ProviderSettingsSnapshot,
   RuntimeEvent,
   RuntimeSnapshot,
   SessionSummary,
@@ -16,6 +20,7 @@ import { resetAgentStore, useAgentStore } from "./lib/agentStore";
 class FakeClient implements DesktopAgentClient {
   keyConfigured = false;
   workspace: string | null = null;
+  providerSettings: ProviderSettings = { mode: "official", name: "OpenAI", baseUrl: "https://api.openai.com/v1", models: [] };
   listeners = new Set<(event: RuntimeEvent) => void>();
   sessions: SessionSummary[] = [];
   messages: ChatMessage[] = [];
@@ -25,6 +30,15 @@ class FakeClient implements DesktopAgentClient {
   startCalls = 0;
   setApiKey = vi.fn(async () => { this.keyConfigured = true; });
   removeApiKey = vi.fn(async () => { this.keyConfigured = false; });
+  getProviderSettings = vi.fn(async (): Promise<ProviderSettingsSnapshot> => ({ settings: this.providerSettings, keyConfigured: this.keyConfigured }));
+  saveProviderSettings = vi.fn(async (settings: ProviderSettings, apiKey?: string): Promise<ProviderSettingsSnapshot> => {
+    this.providerSettings = settings;
+    if (apiKey) this.keyConfigured = true;
+    return { settings, keyConfigured: this.keyConfigured };
+  });
+  saveWorkspace = vi.fn(async (workspace: string) => { this.workspace = workspace; return workspace; });
+  fetchProviderModels = vi.fn(async (): Promise<ProviderModel[]> => [{ id: "fetched-model", name: "Fetched model", enabled: true }]);
+  parseCCSwitchImport = vi.fn(async (): Promise<ProviderImport> => ({ name: "Imported", baseUrl: "https://gateway.example/v1", apiKey: "abc123", models: [{ id: "imported-model", name: "Imported model", enabled: true }] }));
 
   subscribe(listener: (event: RuntimeEvent) => void) {
     this.listeners.add(listener);
@@ -91,17 +105,18 @@ describe("BOYA Desktop", () => {
     expect(useAgentStore.getState().error).toBeNull();
   });
 
-  it("completes first-run setup in the workspace", async () => {
+  it("enters the workbench with only a workspace configured", async () => {
     const client = new FakeClient();
     render(<App client={client} />);
 
     expect(await screen.findByRole("heading", { name: "設定 BOYA" })).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("OpenAI API Key"), { target: { value: "sk-valid-test-key" } });
     fireEvent.click(screen.getByRole("button", { name: "選擇資料夾" }));
     await screen.findByText("/Users/research/field-notes");
-    fireEvent.click(screen.getByRole("button", { name: "開始使用" }));
+    fireEvent.click(screen.getByRole("button", { name: "進入 BOYA" }));
 
-    expect(await screen.findByText("尚無對話" )).toBeInTheDocument();
+    expect(await screen.findByText("尚無對話")).toBeInTheDocument();
+    expect(client.saveWorkspace).toHaveBeenCalledWith("/Users/research/field-notes");
+    expect(client.startCalls).toBe(0);
   });
 
   it("streams text, expands tools, handles approval, stop, and runtime errors", async () => {
@@ -213,7 +228,7 @@ describe("BOYA Desktop", () => {
     await waitFor(() => expect(screen.queryByText("文獻整理")).not.toBeInTheDocument());
   });
 
-  it("restarts after updating the Key and stops before removing it", async () => {
+  it("saves a custom endpoint with an arbitrary key and keeps settings available after key removal", async () => {
     const client = new FakeClient();
     client.keyConfigured = true;
     client.workspace = "/Users/research/field-notes";
@@ -221,33 +236,68 @@ describe("BOYA Desktop", () => {
     await screen.findByText("尚無對話");
 
     fireEvent.click(screen.getByRole("button", { name: "設定" }));
-    fireEvent.change(screen.getByLabelText("更新 OpenAI API Key"), { target: { value: "sk-updated-test-key" } });
-    fireEvent.click(screen.getByRole("button", { name: "更新" }));
+    fireEvent.click(screen.getByLabelText("自訂 OpenAI 相容端點"));
+    fireEvent.change(screen.getByLabelText("服務名稱"), { target: { value: "My Gateway" } });
+    fireEvent.change(screen.getByLabelText("Base URL"), { target: { value: "https://gateway.example/v1" } });
+    fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "abc123" } });
+    fireEvent.change(screen.getByLabelText("新增模型 id"), { target: { value: "some-model" } });
+    fireEvent.click(screen.getByRole("button", { name: "新增" }));
+    fireEvent.click(screen.getByRole("button", { name: "儲存設定" }));
 
-    await waitFor(() => expect(client.setApiKey).toHaveBeenCalledWith("sk-updated-test-key"));
-    expect(client.setApiKey).toHaveBeenCalledBefore(client.stop);
-    await waitFor(() => expect(client.workspace).toBe("/Users/research/field-notes"));
+    await waitFor(() => expect(client.saveProviderSettings).toHaveBeenCalledWith(expect.objectContaining({ mode: "custom", baseUrl: "https://gateway.example/v1" }), "abc123"));
+    expect(client.stop).toHaveBeenCalled();
+    expect(client.startCalls).toBe(2);
 
+    fireEvent.click(screen.getByRole("button", { name: "設定" }));
     fireEvent.click(screen.getByRole("button", { name: "移除 Key" }));
     await waitFor(() => expect(client.removeApiKey).toHaveBeenCalled());
-    expect(client.stop).toHaveBeenCalledBefore(client.removeApiKey);
-    expect(await screen.findByRole("heading", { name: "設定 BOYA" })).toBeInTheDocument();
+    expect(await screen.findByText("API Key 已移除；請輸入新 Key 後儲存設定")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "設定 BOYA" })).not.toBeInTheDocument();
   });
 
-  it("surfaces settings failures without applying optimistic state", async () => {
+  it("surfaces provider settings failures without applying optimistic state", async () => {
     const client = new FakeClient();
     client.keyConfigured = true;
     client.workspace = "/Users/research/field-notes";
-    client.setApiKey.mockRejectedValueOnce(new Error("Keychain unavailable"));
+    client.saveProviderSettings.mockRejectedValueOnce(new Error("Keychain unavailable"));
     render(<App client={client} />);
     await screen.findByText("尚無對話");
 
     fireEvent.click(screen.getByRole("button", { name: "設定" }));
-    fireEvent.change(screen.getByLabelText("更新 OpenAI API Key"), { target: { value: "sk-updated-test-key" } });
-    fireEvent.click(screen.getByRole("button", { name: "更新" }));
+    fireEvent.click(screen.getByLabelText("自訂 OpenAI 相容端點"));
+    fireEvent.change(screen.getByLabelText("Base URL"), { target: { value: "https://gateway.example/v1" } });
+    fireEvent.change(screen.getByLabelText("新增模型 id"), { target: { value: "some-model" } });
+    fireEvent.click(screen.getByRole("button", { name: "新增" }));
+    fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "abc123" } });
+    fireEvent.click(screen.getByRole("button", { name: "儲存設定" }));
 
     expect(await screen.findByText("Keychain unavailable")).toBeInTheDocument();
-    expect(client.keyConfigured).toBe(true);
+    expect(client.providerSettings.mode).toBe("official");
+  });
+
+
+  it("imports CC Switch settings, fetches models, and persists enablement", async () => {
+    const client = new FakeClient();
+    client.keyConfigured = true;
+    client.workspace = "/Users/research/field-notes";
+    render(<App client={client} />);
+    await screen.findByText("尚無對話");
+
+    fireEvent.click(screen.getByRole("button", { name: "設定" }));
+    fireEvent.click(screen.getByLabelText("自訂 OpenAI 相容端點"));
+    fireEvent.change(screen.getByLabelText("CC Switch 連結"), { target: { value: "ccswitch://v1/import?..." } });
+    fireEvent.click(screen.getByRole("button", { name: "匯入連結" }));
+    expect(await screen.findByDisplayValue("https://gateway.example/v1")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("abc123")).toBeInTheDocument();
+    expect(screen.getByText("Imported model")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "抓取模型" }));
+    expect(await screen.findByText("Fetched model")).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("checkbox")[1]);
+    fireEvent.click(screen.getByRole("button", { name: "儲存設定" }));
+
+    await waitFor(() => expect(client.fetchProviderModels).toHaveBeenCalledWith("https://gateway.example/v1", "abc123"));
+    await waitFor(() => expect(client.saveProviderSettings).toHaveBeenCalledWith(expect.objectContaining({ mode: "custom", models: expect.arrayContaining([expect.objectContaining({ id: "imported-model", enabled: false }), expect.objectContaining({ id: "fetched-model", enabled: true })]) }), "abc123"));
   });
 
   it("replaces the optimistic user message with Pi history instead of duplicating it", async () => {

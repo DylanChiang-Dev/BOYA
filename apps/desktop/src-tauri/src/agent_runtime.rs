@@ -1,3 +1,6 @@
+use crate::provider::{
+    self, ProviderSettings, CUSTOM_PROVIDER_ID, DEFAULT_MODEL, OFFICIAL_PROVIDER_ID,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -297,11 +300,27 @@ pub fn sanitize_runtime_text(text: &str, secret: Option<&str>) -> String {
     }
     clean
 }
+fn sanitize_runtime_value(value: &Value, secret: Option<&str>) -> Value {
+    match value {
+        Value::String(text) => Value::String(sanitize_runtime_text(text, secret)),
+        Value::Array(values) => Value::Array(
+            values
+                .iter()
+                .map(|value| sanitize_runtime_value(value, secret))
+                .collect(),
+        ),
+        Value::Object(object) => Value::Object(
+            object
+                .iter()
+                .map(|(key, value)| (key.clone(), sanitize_runtime_value(value, secret)))
+                .collect(),
+        ),
+        _ => value.clone(),
+    }
+}
 
 const EVENT_CHANNEL: &str = "agent-runtime-event";
 const KEYCHAIN_SERVICE: &str = "dev.dylanchiang.boya.openai";
-const KEYCHAIN_ACCOUNT: &str = "openai";
-const DEFAULT_MODEL: &str = "gpt-5.6-terra";
 static MESSAGE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -354,7 +373,10 @@ struct RuntimeConfig {
     sessions_dir: PathBuf,
     pi_binary: PathBuf,
     extension: PathBuf,
+    provider: String,
+    provider_settings: ProviderSettings,
     model: String,
+    secret: String,
     session_path: Option<PathBuf>,
 }
 
@@ -482,14 +504,15 @@ fn write_runtime_files(config: &RuntimeConfig) -> Result<(PathBuf, PathBuf), Str
         .map_err(|error| format!("Cannot create Pi private directory: {error}"))?;
     fs::create_dir_all(&config.sessions_dir)
         .map_err(|error| format!("Cannot create session directory: {error}"))?;
+    let account = keychain_account(&config.provider)?;
     let auth = serde_json::json!({
-        "openai": {
+        config.provider.clone(): {
             "type": "api_key",
-            "key": format!("!/usr/bin/security find-generic-password -s {KEYCHAIN_SERVICE} -a {KEYCHAIN_ACCOUNT} -w")
+            "key": format!("!/usr/bin/security find-generic-password -s {KEYCHAIN_SERVICE} -a {account} -w")
         }
     });
     let settings = serde_json::json!({
-        "defaultProvider": "openai",
+        "defaultProvider": config.provider,
         "defaultModel": config.model,
         "defaultProjectTrust": "never",
         "enableInstallTelemetry": false,
@@ -506,6 +529,7 @@ fn write_runtime_files(config: &RuntimeConfig) -> Result<(PathBuf, PathBuf), Str
         serde_json::to_vec_pretty(&settings).map_err(|error| error.to_string())?,
     )
     .map_err(|error| format!("Cannot write Pi settings: {error}"))?;
+    provider::write_models_file(&config.private_dir, &config.provider_settings)?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -637,7 +661,7 @@ fn validate_prompt_message(message: &str) -> Result<&str, String> {
     Ok(trimmed)
 }
 
-fn normalized_event(frame: &Value) -> Option<Value> {
+fn normalized_event(frame: &Value, secret: Option<&str>) -> Option<Value> {
     match frame.get("type").and_then(Value::as_str)? {
         "message_update" => {
             let update = frame.get("assistantMessageEvent")?;
@@ -664,7 +688,7 @@ fn normalized_event(frame: &Value) -> Option<Value> {
                             } else {
                                 "Pi could not complete the response"
                             }),
-                        None,
+                        secret,
                     )
                 }))
             } else {
@@ -713,7 +737,7 @@ fn normalized_event(frame: &Value) -> Option<Value> {
         "agent_settled" => Some(serde_json::json!({ "type": "runtime.settled" })),
         "extension_error" => Some(serde_json::json!({
             "type": "runtime.error",
-            "message": sanitize_runtime_text(frame.get("error").and_then(Value::as_str).unwrap_or("Extension error"), None)
+            "message": sanitize_runtime_text(frame.get("error").and_then(Value::as_str).unwrap_or("Extension error"), secret)
         })),
         _ => None,
     }
@@ -725,6 +749,7 @@ fn handle_stdout(
     pending: Arc<Mutex<HashMap<String, mpsc::Sender<Result<Value, String>>>>>,
     stdout: impl Read,
     generation: u64,
+    secret: String,
 ) {
     let mut reader = BufReader::new(stdout);
     let mut bytes = Vec::new();
@@ -753,13 +778,13 @@ fn handle_stdout(
                                 let result = if frame.get("success").and_then(Value::as_bool)
                                     == Some(true)
                                 {
-                                    Ok(frame)
+                                    Ok(sanitize_runtime_value(&frame, Some(&secret)))
                                 } else {
-                                    Err(frame
+                                    let message = frame
                                         .get("error")
                                         .and_then(Value::as_str)
-                                        .unwrap_or("Pi command failed")
-                                        .to_owned())
+                                        .unwrap_or("Pi command failed");
+                                    Err(sanitize_runtime_text(message, Some(&secret)))
                                 };
                                 let _ = sender.send(result);
                             }
@@ -787,7 +812,8 @@ fn handle_stdout(
                         }
                     }
                 }
-                if let Some(event) = normalized_event(&frame) {
+                let sanitized_frame = sanitize_runtime_value(&frame, Some(&secret));
+                if let Some(event) = normalized_event(&sanitized_frame, Some(&secret)) {
                     let _ = app.emit(EVENT_CHANNEL, event);
                 }
             }
@@ -851,10 +877,10 @@ fn handle_stdout(
     }
 }
 
-fn handle_stderr(app: AppHandle, stderr: impl Read) {
+fn handle_stderr(app: AppHandle, stderr: impl Read, secret: String) {
     let reader = BufReader::new(stderr);
     for line in reader.lines().map_while(Result::ok) {
-        let clean = sanitize_runtime_text(&line, None);
+        let clean = sanitize_runtime_text(&line, Some(&secret));
         if !clean.trim().is_empty() {
             let _ = app.emit(
                 EVENT_CHANNEL,
@@ -892,17 +918,13 @@ fn spawn_saved_runtime(app: &AppHandle, state: &Arc<Mutex<RuntimeInner>>) -> Res
         .arg("-D")
         .arg(format!("USER_HOME={}", user_home()?.display()))
         .arg(&config.pi_binary)
-        .args([
-            "--mode",
-            "rpc",
-            "--provider",
-            "openai",
-            "--model",
-            &config.model,
-            "--models",
-            "openai/*",
-            "--session-dir",
-        ])
+        .args(["--mode", "rpc", "--provider"])
+        .arg(&config.provider)
+        .args(["--model"])
+        .arg(&config.model)
+        .args(["--models"])
+        .arg(format!("{}/*", config.provider))
+        .args(["--session-dir"])
         .arg(&config.sessions_dir)
         .args([
             "--tools",
@@ -954,6 +976,8 @@ fn spawn_saved_runtime(app: &AppHandle, state: &Arc<Mutex<RuntimeInner>>) -> Res
         .stderr
         .take()
         .ok_or_else(|| "Pi stderr is unavailable".to_string())?;
+    let stderr_secret = config.secret.clone();
+    let stdout_secret = config.secret.clone();
     let pending = Arc::new(Mutex::new(HashMap::new()));
 
     let generation = {
@@ -973,9 +997,18 @@ fn spawn_saved_runtime(app: &AppHandle, state: &Arc<Mutex<RuntimeInner>>) -> Res
     };
     let app_stdout = app.clone();
     let state_stdout = state.clone();
-    thread::spawn(move || handle_stdout(app_stdout, state_stdout, pending, stdout, generation));
+    thread::spawn(move || {
+        handle_stdout(
+            app_stdout,
+            state_stdout,
+            pending,
+            stdout,
+            generation,
+            stdout_secret,
+        )
+    });
     let app_stderr = app.clone();
-    thread::spawn(move || handle_stderr(app_stderr, stderr));
+    thread::spawn(move || handle_stderr(app_stderr, stderr, stderr_secret));
     Ok(())
 }
 
@@ -1048,11 +1081,19 @@ fn session_files(root: &Path, output: &mut Vec<PathBuf>, depth: usize) {
     }
 }
 
+fn keychain_account(provider_id: &str) -> Result<&'static str, String> {
+    match provider_id {
+        OFFICIAL_PROVIDER_ID => Ok(OFFICIAL_PROVIDER_ID),
+        CUSTOM_PROVIDER_ID => Ok(CUSTOM_PROVIDER_ID),
+        _ => Err("Unsupported provider account".into()),
+    }
+}
+
 #[cfg(target_os = "macos")]
-fn keychain_get() -> Result<Option<String>, String> {
+fn keychain_get_for_account(account: &str) -> Result<Option<String>, String> {
     use security_framework_sys::base::errSecItemNotFound;
 
-    match security_framework::passwords::get_generic_password(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT) {
+    match security_framework::passwords::get_generic_password(KEYCHAIN_SERVICE, account) {
         Ok(bytes) => String::from_utf8(bytes)
             .map(Some)
             .map_err(|_| "Keychain value is not valid UTF-8".into()),
@@ -1062,51 +1103,157 @@ fn keychain_get() -> Result<Option<String>, String> {
 }
 
 #[cfg(not(target_os = "macos"))]
-fn keychain_get() -> Result<Option<String>, String> {
+fn keychain_get_for_account(_account: &str) -> Result<Option<String>, String> {
     Err("BOYA Desktop 0.2 only supports macOS".into())
 }
 
-#[tauri::command]
-pub fn agent_api_key_status() -> Result<bool, String> {
-    Ok(keychain_get()?.is_some())
+fn keychain_get_for_provider(provider_id: &str) -> Result<Option<String>, String> {
+    keychain_get_for_account(keychain_account(provider_id)?)
 }
 
-#[tauri::command]
-pub fn agent_set_api_key(key: String) -> Result<(), String> {
-    let trimmed = key.trim();
-    if trimmed.len() < 12 || !trimmed.starts_with("sk-") {
-        return Err("OpenAI API Key format is invalid".into());
-    }
-    #[cfg(target_os = "macos")]
+#[cfg(target_os = "macos")]
+fn keychain_set_for_provider(provider_id: &str, value: &str) -> Result<(), String> {
     security_framework::passwords::set_generic_password(
         KEYCHAIN_SERVICE,
-        KEYCHAIN_ACCOUNT,
-        trimmed.as_bytes(),
+        keychain_account(provider_id)?,
+        value.as_bytes(),
     )
-    .map_err(|error| format!("Cannot save API Key to Keychain: {error}"))?;
-    #[cfg(not(target_os = "macos"))]
-    return Err("BOYA Desktop 0.2 only supports macOS".into());
-    Ok(())
+    .map_err(|error| format!("Cannot save API Key to Keychain: {error}"))
+}
+
+#[cfg(not(target_os = "macos"))]
+fn keychain_set_for_provider(_provider_id: &str, _value: &str) -> Result<(), String> {
+    Err("BOYA Desktop 0.2 only supports macOS".into())
+}
+
+#[cfg(target_os = "macos")]
+fn keychain_remove_for_provider(provider_id: &str) -> Result<(), String> {
+    use security_framework_sys::base::errSecItemNotFound;
+
+    match security_framework::passwords::delete_generic_password(
+        KEYCHAIN_SERVICE,
+        keychain_account(provider_id)?,
+    ) {
+        Ok(()) => Ok(()),
+        Err(error) if error.code() == errSecItemNotFound => Ok(()),
+        Err(error) => Err(format!("Cannot remove API Key from Keychain: {error}")),
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn keychain_remove_for_provider(_provider_id: &str) -> Result<(), String> {
+    Err("BOYA Desktop 0.2 only supports macOS".into())
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderSettingsSnapshot {
+    pub settings: ProviderSettings,
+    pub key_configured: bool,
 }
 
 #[tauri::command]
-pub fn agent_remove_api_key() -> Result<(), String> {
-    #[cfg(target_os = "macos")]
-    {
-        use security_framework_sys::base::errSecItemNotFound;
+pub fn agent_api_key_status(app: AppHandle) -> Result<bool, String> {
+    let settings = provider::read_provider_settings(&read_preferences(&app))?;
+    Ok(keychain_get_for_provider(provider::provider_id(&settings))?.is_some())
+}
 
-        match security_framework::passwords::delete_generic_password(
-            KEYCHAIN_SERVICE,
-            KEYCHAIN_ACCOUNT,
-        ) {
-            Ok(()) => {}
-            Err(error) if error.code() == errSecItemNotFound => {}
-            Err(error) => return Err(format!("Cannot remove API Key from Keychain: {error}")),
-        }
+#[tauri::command]
+pub fn agent_set_api_key(app: AppHandle, key: String) -> Result<(), String> {
+    let settings = provider::read_provider_settings(&read_preferences(&app))?;
+    let key = provider::validate_api_key(&key)?;
+    keychain_set_for_provider(provider::provider_id(&settings), &key)
+}
+
+#[tauri::command]
+pub fn agent_remove_api_key(app: AppHandle) -> Result<(), String> {
+    let settings = provider::read_provider_settings(&read_preferences(&app))?;
+    keychain_remove_for_provider(provider::provider_id(&settings))
+}
+
+#[tauri::command]
+pub fn agent_get_provider_settings(app: AppHandle) -> Result<ProviderSettingsSnapshot, String> {
+    let settings = provider::read_provider_settings(&read_preferences(&app))?;
+    let key_configured = keychain_get_for_provider(provider::provider_id(&settings))?.is_some();
+    Ok(ProviderSettingsSnapshot {
+        settings,
+        key_configured,
+    })
+}
+
+#[tauri::command]
+pub fn agent_save_provider_settings(
+    app: AppHandle,
+    settings: ProviderSettings,
+    api_key: Option<String>,
+) -> Result<ProviderSettingsSnapshot, String> {
+    let mut settings = settings;
+    if settings.mode == provider::ProviderMode::Official {
+        settings.name = "OpenAI".to_owned();
+        settings.base_url = provider::OFFICIAL_BASE_URL.to_owned();
+        settings.models.clear();
+    } else if settings.name.trim().is_empty() {
+        settings.name = "Custom OpenAI-compatible endpoint".to_owned();
     }
-    #[cfg(not(target_os = "macos"))]
-    return Err("BOYA Desktop 0.2 only supports macOS".into());
-    Ok(())
+    provider::validate_provider_settings(&settings)?;
+    let preferences = read_preferences(&app);
+    let previous_settings = provider::read_provider_settings(&preferences)?;
+    let provider_changed = previous_settings.mode != settings.mode;
+    let model = if provider_changed && settings.mode == provider::ProviderMode::Official {
+        DEFAULT_MODEL.to_owned()
+    } else {
+        provider::selected_model(&preferences, &settings)?
+    };
+    let provider_id = provider::provider_id(&settings);
+    if let Some(api_key) = api_key {
+        keychain_set_for_provider(provider_id, &provider::validate_api_key(&api_key)?)?;
+    }
+    update_preferences(
+        &app,
+        "provider",
+        serde_json::to_value(&settings).map_err(|error| error.to_string())?,
+    )?;
+    update_preferences(&app, "model", Value::String(model.clone()))?;
+    update_preferences(&app, "modelProvider", Value::String(provider_id.to_owned()))?;
+    let key_configured = keychain_get_for_provider(provider_id)?.is_some();
+    Ok(ProviderSettingsSnapshot {
+        settings,
+        key_configured,
+    })
+}
+
+#[tauri::command]
+pub fn agent_save_workspace(app: AppHandle, workspace: String) -> Result<String, String> {
+    let workspace = canonical_workspace(&workspace)?;
+    let value = workspace.to_string_lossy().into_owned();
+    update_preferences(&app, "workspace", Value::String(value.clone()))?;
+    Ok(value)
+}
+
+#[tauri::command]
+pub async fn agent_fetch_provider_models(
+    app: AppHandle,
+    base_url: String,
+    api_key: Option<String>,
+) -> Result<Vec<provider::ProviderModel>, String> {
+    let preferences = read_preferences(&app);
+    let settings = provider::read_provider_settings(&preferences)?;
+    let provided_key = api_key
+        .map(|value| provider::validate_api_key(&value))
+        .transpose()?;
+    let uses_saved_custom_endpoint = settings.mode == provider::ProviderMode::Custom
+        && base_url.trim().trim_end_matches('/') == settings.base_url.trim().trim_end_matches('/');
+    let stored_key = if provided_key.is_none() && uses_saved_custom_endpoint {
+        keychain_get_for_provider(provider::provider_id(&settings))?
+    } else {
+        None
+    };
+    provider::fetch_models(&base_url, provided_key.as_deref().or(stored_key.as_deref())).await
+}
+
+#[tauri::command]
+pub fn agent_parse_ccswitch_import(link: String) -> Result<provider::ProviderImport, String> {
+    provider::parse_ccswitch_import(&link)
 }
 
 #[tauri::command]
@@ -1115,21 +1262,18 @@ pub fn agent_snapshot(
     state: State<'_, AgentRuntimeState>,
 ) -> Result<RuntimeSnapshot, String> {
     let mut snapshot = lock(&state.inner)?.snapshot.clone();
-    if snapshot.workspace.is_none() {
+    if snapshot.workspace.is_none() || snapshot.status == "offline" {
         let preferences = read_preferences(&app);
+        let settings = provider::read_provider_settings(&preferences)?;
         snapshot.workspace = preferences
             .get("workspace")
             .and_then(Value::as_str)
             .map(str::to_owned);
-        snapshot.model = preferences
-            .get("model")
-            .and_then(Value::as_str)
-            .unwrap_or(DEFAULT_MODEL)
-            .to_owned();
+        snapshot.model = provider::selected_model(&preferences, &settings)
+            .unwrap_or_else(|_| DEFAULT_MODEL.to_owned());
     }
     Ok(snapshot)
 }
-
 #[tauri::command]
 pub fn agent_start(
     app: AppHandle,
@@ -1137,10 +1281,10 @@ pub fn agent_start(
     workspace: Option<String>,
     session_path: Option<String>,
 ) -> Result<RuntimeSnapshot, String> {
-    if keychain_get()?.is_none() {
-        return Err("請先設定 OpenAI API Key".into());
-    }
     let preferences = read_preferences(&app);
+    let provider_settings = provider::read_provider_settings(&preferences)?;
+    provider::validate_provider_settings(&provider_settings)?;
+    let provider_id = provider::provider_id(&provider_settings).to_owned();
     let workspace_value = workspace
         .or_else(|| {
             preferences
@@ -1149,16 +1293,14 @@ pub fn agent_start(
                 .map(str::to_owned)
         })
         .ok_or_else(|| "請先選擇工作資料夾".to_string())?;
+    let secret = keychain_get_for_provider(&provider_id)?
+        .ok_or_else(|| "請先到設定配置 API Key".to_string())?;
     let workspace = canonical_workspace(&workspace_value)?;
     let private_dir = app_private_dir(&app)?;
     let sessions_dir = private_dir.join("sessions");
     let pi_binary = locate_resource(&app, &["binaries/pi-aarch64-apple-darwin", "binaries/pi"])?;
     let extension = locate_resource(&app, &["agent-runtime/boya-policy.ts"])?;
-    let model = preferences
-        .get("model")
-        .and_then(Value::as_str)
-        .unwrap_or(DEFAULT_MODEL)
-        .to_owned();
+    let model = provider::selected_model(&preferences, &provider_settings)?;
     fs::create_dir_all(&sessions_dir)
         .map_err(|error| format!("Cannot create BOYA session storage: {error}"))?;
     let session_path = session_path
@@ -1170,6 +1312,8 @@ pub fn agent_start(
         "workspace",
         Value::String(workspace.to_string_lossy().into_owned()),
     )?;
+    update_preferences(&app, "model", Value::String(model.clone()))?;
+    update_preferences(&app, "modelProvider", Value::String(provider_id.clone()))?;
     {
         let mut inner = lock(&state.inner)?;
         inner.desired_running = true;
@@ -1183,26 +1327,45 @@ pub fn agent_start(
             sessions_dir: sessions_dir.clone(),
             pi_binary,
             extension,
+            provider: provider_id,
+            provider_settings,
             model,
+            secret,
             session_path,
         });
         emit_snapshot(&app, &inner.snapshot);
     }
-    spawn_saved_runtime(&app, &state.inner)?;
-    let response = rpc_request(&state, serde_json::json!({ "type": "get_state" }))?;
-    let (session_id, session_path) = state_session(&response)?;
-    let session_path = validate_session_path(&sessions_dir, &session_path, true)?;
-    let mut inner = lock(&state.inner)?;
-    inner.snapshot.session_id = Some(session_id);
-    if let Some(config) = inner.config.as_mut() {
-        config.session_path = Some(session_path);
+    let startup = (|| -> Result<RuntimeSnapshot, String> {
+        spawn_saved_runtime(&app, &state.inner)?;
+        let response = rpc_request(&state, serde_json::json!({ "type": "get_state" }))?;
+        let (session_id, session_path) = state_session(&response)?;
+        let session_path = validate_session_path(&sessions_dir, &session_path, true)?;
+        let mut inner = lock(&state.inner)?;
+        inner.snapshot.session_id = Some(session_id);
+        if let Some(config) = inner.config.as_mut() {
+            config.session_path = Some(session_path);
+        }
+        inner.snapshot.status = "ready".into();
+        let snapshot = inner.snapshot.clone();
+        emit_snapshot(&app, &snapshot);
+        Ok(snapshot)
+    })();
+    match startup {
+        Ok(snapshot) => Ok(snapshot),
+        Err(error) => {
+            let _ = stop_process(&state);
+            if let Ok(mut inner) = lock(&state.inner) {
+                inner.config = None;
+                inner.snapshot.status = "offline".into();
+                inner.snapshot.session_id = None;
+                inner.snapshot.running = false;
+                inner.snapshot.error = Some(error.clone());
+                emit_snapshot(&app, &inner.snapshot);
+            }
+            Err(error)
+        }
     }
-    inner.snapshot.status = "ready".into();
-    let snapshot = inner.snapshot.clone();
-    emit_snapshot(&app, &snapshot);
-    Ok(snapshot)
 }
-
 #[tauri::command]
 pub fn agent_stop(app: AppHandle, state: State<'_, AgentRuntimeState>) -> Result<(), String> {
     stop_process(&state)?;
@@ -1413,6 +1576,11 @@ pub fn agent_get_messages(state: State<'_, AgentRuntimeState>) -> Result<Vec<Cha
 
 #[tauri::command]
 pub fn agent_list_models(state: State<'_, AgentRuntimeState>) -> Result<Vec<ModelInfo>, String> {
+    let provider_id = lock(&state.inner)?
+        .config
+        .as_ref()
+        .map(|config| config.provider.clone())
+        .unwrap_or_else(|| OFFICIAL_PROVIDER_ID.to_owned());
     let response = rpc_request(
         &state,
         serde_json::json!({ "type": "get_available_models" }),
@@ -1424,7 +1592,7 @@ pub fn agent_list_models(state: State<'_, AgentRuntimeState>) -> Result<Vec<Mode
         .unwrap_or_default();
     Ok(models
         .iter()
-        .filter(|model| model.get("provider").and_then(Value::as_str) == Some("openai"))
+        .filter(|model| model.get("provider").and_then(Value::as_str) == Some(provider_id.as_str()))
         .filter_map(|model| {
             let id = model.get("id")?.as_str()?.to_owned();
             Some(ModelInfo {
@@ -1447,14 +1615,23 @@ pub fn agent_set_model(
     state: State<'_, AgentRuntimeState>,
     model_id: String,
 ) -> Result<(), String> {
+    if model_id.trim().is_empty() {
+        return Err("模型 id 不可為空".into());
+    }
     if lock(&state.inner)?.snapshot.running {
         return Err("Stop the current turn before changing models".into());
     }
+    let provider_id = lock(&state.inner)?
+        .config
+        .as_ref()
+        .map(|config| config.provider.clone())
+        .unwrap_or_else(|| OFFICIAL_PROVIDER_ID.to_owned());
     rpc_request(
         &state,
-        serde_json::json!({ "type": "set_model", "provider": "openai", "modelId": model_id }),
+        serde_json::json!({ "type": "set_model", "provider": provider_id.clone(), "modelId": model_id }),
     )?;
     update_preferences(&app, "model", Value::String(model_id.clone()))?;
+    update_preferences(&app, "modelProvider", Value::String(provider_id))?;
     let mut inner = lock(&state.inner)?;
     inner.snapshot.model = model_id.clone();
     if let Some(config) = inner.config.as_mut() {
@@ -1503,13 +1680,22 @@ pub fn agent_versions() -> Value {
     serde_json::json!({ "boya": env!("CARGO_PKG_VERSION"), "pi": "v0.84.1" })
 }
 
+/// Tauri executes non-`async` commands inline on the main thread, and the dialog
+/// plugin dispatches the folder picker back onto that same thread. A blocking
+/// picker there waits for work only the blocked thread can run, deadlocking the
+/// event loop, so this command stays async and uses the callback API.
 #[tauri::command]
-pub fn agent_pick_workspace(app: AppHandle) -> Result<Option<String>, String> {
+pub async fn agent_pick_workspace(app: AppHandle) -> Result<Option<String>, String> {
     use tauri_plugin_dialog::DialogExt;
-    Ok(app
-        .dialog()
-        .file()
-        .blocking_pick_folder()
+    let (sender, mut receiver) = tauri::async_runtime::channel(1);
+    app.dialog().file().pick_folder(move |path| {
+        let _ = sender.try_send(path);
+    });
+    let selection = receiver
+        .recv()
+        .await
+        .ok_or_else(|| "Folder picker closed unexpectedly".to_string())?;
+    Ok(selection
         .and_then(|path| path.into_path().ok())
         .map(|path| path.to_string_lossy().into_owned()))
 }
@@ -1659,6 +1845,16 @@ mod tests {
         assert!(!clean.contains("token-value"));
         assert!(clean.contains("[REDACTED]"));
     }
+    #[test]
+    fn redacts_secrets_in_nested_runtime_event_values() {
+        let value = serde_json::json!({
+            "tool": { "output": "Authorization: Bearer abc123" },
+            "items": ["OPENAI_API_KEY=abc123"],
+        });
+        let clean = sanitize_runtime_value(&value, Some("abc123"));
+        assert_eq!(clean["tool"]["output"], "Authorization: Bearer [REDACTED]");
+        assert_eq!(clean["items"][0], "OPENAI_API_KEY=[REDACTED]");
+    }
 
     #[test]
     fn completed_messages_without_frame_ids_remain_distinct() {
@@ -1705,7 +1901,7 @@ mod tests {
         });
 
         assert_eq!(
-            normalized_event(&frame).unwrap(),
+            normalized_event(&frame, None).unwrap(),
             serde_json::json!({ "type": "runtime.error", "message": "Invalid API key" })
         );
     }
@@ -1730,6 +1926,39 @@ mod tests {
             Err("Pi runtime exited".into())
         );
         assert!(pending.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn custom_runtime_uses_fixed_provider_and_enabled_model() {
+        let settings = provider::ProviderSettings {
+            mode: provider::ProviderMode::Custom,
+            name: "Gateway".into(),
+            base_url: "https://gateway.example/v1".into(),
+            models: vec![
+                provider::ProviderModel {
+                    id: "live".into(),
+                    name: "Live".into(),
+                    enabled: true,
+                },
+                provider::ProviderModel {
+                    id: "disabled".into(),
+                    name: "Disabled".into(),
+                    enabled: false,
+                },
+            ],
+        };
+        assert_eq!(provider::provider_id(&settings), CUSTOM_PROVIDER_ID);
+        assert_eq!(
+            provider::selected_model(&serde_json::json!({ "model": "disabled" }), &settings)
+                .unwrap(),
+            "live"
+        );
+    }
+
+    #[test]
+    fn arbitrary_nonempty_keys_are_accepted_without_sk_prefix() {
+        assert_eq!(provider::validate_api_key(" abc123 ").unwrap(), "abc123");
+        assert!(provider::validate_api_key(" ").is_err());
     }
 
     #[cfg(target_os = "macos")]

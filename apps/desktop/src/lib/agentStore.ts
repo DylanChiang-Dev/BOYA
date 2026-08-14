@@ -3,6 +3,7 @@ import type {
   ApprovalRequest,
   ChatMessage,
   ModelInfo,
+  ProviderSettings,
   RuntimeEvent,
   RuntimeSnapshot,
   SessionSummary,
@@ -14,6 +15,7 @@ interface AgentStore {
   booting: boolean;
   configured: boolean;
   keyConfigured: boolean;
+  providerSettings: ProviderSettings;
   workspace: string | null;
   snapshot: RuntimeSnapshot;
   sessions: SessionSummary[];
@@ -39,11 +41,18 @@ const initialSnapshot: RuntimeSnapshot = {
   model: "gpt-5.6-terra",
   running: false,
 };
+const initialProviderSettings: ProviderSettings = {
+  mode: "official",
+  name: "OpenAI",
+  baseUrl: "https://api.openai.com/v1",
+  models: [],
+};
 
 export const useAgentStore = create<AgentStore>((set, get) => ({
   booting: true,
   configured: false,
   keyConfigured: false,
+  providerSettings: initialProviderSettings,
   workspace: null,
   snapshot: initialSnapshot,
   sessions: [],
@@ -59,16 +68,26 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
 
   async initialize(client, isCurrent = () => true) {
     try {
-      const [keyConfigured, snapshot, versions] = await Promise.all([
-        client.apiKeyStatus(),
+      const [provider, snapshot, versions] = await Promise.all([
+        client.getProviderSettings(),
         client.snapshot(),
         client.versions(),
       ]);
       if (!isCurrent()) return;
       const workspace = snapshot.workspace;
-      set({ keyConfigured, snapshot, workspace, versions });
-      if (!keyConfigured || !workspace) {
+      set({
+        keyConfigured: provider.keyConfigured,
+        providerSettings: provider.settings,
+        snapshot,
+        workspace,
+        versions,
+      });
+      if (!workspace) {
         set({ configured: false, booting: false });
+        return;
+      }
+      if (!provider.keyConfigured) {
+        set({ configured: true, booting: false });
         return;
       }
       const ready = await client.start(workspace);
@@ -158,6 +177,7 @@ export function resetAgentStore() {
     booting: true,
     configured: false,
     keyConfigured: false,
+    providerSettings: initialProviderSettings,
     workspace: null,
     snapshot: initialSnapshot,
     sessions: [],
