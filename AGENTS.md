@@ -36,3 +36,16 @@ require one-time approval. Dependency installation and remote access are denied.
 - Use `upstream` as fetch-only. Never push to it.
 - Run the Pi pin check and RPC smoke test, frontend tests, typecheck, lint, Rust
   tests, audit, and the Apple Silicon package build before pushing product changes.
+- Model-provider configuration is persistent in-app settings, not a first-run
+  gate. First run only requires a workspace; API key, base URL, and the model
+  list are edited later in Settings, and keys are stored per provider in the
+  macOS Keychain.
+- Never call a blocking Tauri dialog API from a synchronous command. The macOS
+  dialog needs the main thread, so a blocking pick on that thread deadlocks the
+  window. Run the picker off the main thread.
+- Verify desktop behavior against a freshly installed bundle. A stale
+  `/Applications/BOYA Desktop.app` keeps running the old binary and hides
+  shipped changes; compare binary hashes when a fix appears missing.
+- Keep `pnpm-workspace.yaml` overrides at or above the current advisory
+  thresholds. `pnpm audit --audit-level high` is a CI gate, so a pin that was
+  patched yesterday can block a push today.
