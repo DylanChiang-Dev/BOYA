@@ -71,11 +71,11 @@ jobs:
           source_dmg="$(find apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg -name '*.dmg' -print -quit)"
           test -n "$source_app"
           test -n "$source_dmg"
-          ditto -c -k --sequesterRsrc --keepParent "$source_app" dist/release/BOYA-Desktop_0.2.0_aarch64.app.zip
-          cp "$source_dmg" dist/release/BOYA-Desktop_0.2.0_aarch64.dmg
+          ditto -c -k --sequesterRsrc --keepParent "$source_app" dist/release/BOYA-Desktop_0.3.0_aarch64.app.zip
+          cp "$source_dmg" dist/release/BOYA-Desktop_0.3.0_aarch64.dmg
           shasum -a 256 dist/release/* > dist/release/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: BOYA-Desktop_0.2.0_aarch64
+          name: BOYA-Desktop_0.3.0_aarch64
           path: dist/release/
           if-no-files-found: error

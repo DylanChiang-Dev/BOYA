@@ -311,7 +311,7 @@ dependencies = [
 
 [[package]]
 name = "boya-desktop"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "base64 0.22.1",
  "reqwest",
@@ -323,6 +323,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-dialog",
  "tauri-plugin-single-instance",
+ "tokio",
 ]
 
 [[package]]

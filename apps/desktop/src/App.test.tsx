@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type {
   ApprovalReply,
   ChatMessage,
+  DesktopAuthSnapshot,
   ModelInfo,
   ProviderImport,
   ProviderModel,
@@ -18,6 +19,16 @@ import type { DesktopAgentClient } from "./lib/agentClient";
 import { resetAgentStore, useAgentStore } from "./lib/agentStore";
 
 class FakeClient implements DesktopAgentClient {
+  account: DesktopAuthSnapshot | null = {
+    account: {
+      user: { id: "user-1", name: "研究者", email: "researcher@example.com" },
+      roles: ["member"],
+      membership: { tier: "free", expiresAt: null },
+      desktopAccess: true,
+      sessionExpiresAt: "2026-10-01T00:00:00.000Z",
+    },
+    offline: false,
+  };
   keyConfigured = false;
   workspace: string | null = null;
   providerSettings: ProviderSettings = { mode: "official", name: "OpenAI", baseUrl: "https://api.openai.com/v1", models: [] };
@@ -28,6 +39,9 @@ class FakeClient implements DesktopAgentClient {
   replyApproval = vi.fn(async (_reply: ApprovalReply) => {});
   stop = vi.fn(async () => {});
   startCalls = 0;
+  login = vi.fn(async () => this.account!);
+  getAccount = vi.fn(async () => this.account);
+  logout = vi.fn(async () => { this.account = null; });
   setApiKey = vi.fn(async () => { this.keyConfigured = true; });
   removeApiKey = vi.fn(async () => { this.keyConfigured = false; });
   getProviderSettings = vi.fn(async (): Promise<ProviderSettingsSnapshot> => ({ settings: this.providerSettings, keyConfigured: this.keyConfigured }));
@@ -51,7 +65,7 @@ class FakeClient implements DesktopAgentClient {
 
   async apiKeyStatus() { return this.keyConfigured; }
   async pickWorkspace() { this.workspace = "/Users/research/field-notes"; return this.workspace; }
-  async versions() { return { boya: "0.2.0", pi: "v0.84.1" }; }
+  async versions() { return { boya: "0.3.0", pi: "v0.84.1" }; }
   async snapshot(): Promise<RuntimeSnapshot> {
     return { status: "offline", workspace: this.workspace, sessionId: null, model: "gpt-5.6-terra", running: false };
   }
@@ -83,6 +97,18 @@ class FakeClient implements DesktopAgentClient {
 }
 
 describe("BOYA Desktop", () => {
+  it("requires the BOYA account before workspace setup", async () => {
+    const client = new FakeClient();
+    client.account = null;
+    render(<App client={client} />);
+
+    expect(await screen.findByRole("heading", { name: "登入 BOYA" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "選擇資料夾" })).not.toBeInTheDocument();
+    client.account = new FakeClient().account;
+    fireEvent.click(screen.getByRole("button", { name: "使用 BOYA Web 登入" }));
+    expect(await screen.findByRole("heading", { name: "設定 BOYA" })).toBeInTheDocument();
+  });
+
   it("ignores initialization failures from a replaced client", async () => {
     resetAgentStore();
     const client = new FakeClient();

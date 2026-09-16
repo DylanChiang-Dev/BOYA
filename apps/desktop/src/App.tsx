@@ -7,6 +7,7 @@ import {
   ChevronRight,
   FolderOpen,
   LoaderCircle,
+  LogOut,
   MessageSquarePlus,
   MoreHorizontal,
   Pencil,
@@ -31,6 +32,31 @@ function IconButton({ label, children, onClick, disabled }: {
   disabled?: boolean;
 }) {
   return <button className="icon-button" type="button" aria-label={label} title={label} onClick={onClick} disabled={disabled}>{children}</button>;
+}
+
+function LoginGate({ client }: { client: DesktopAgentClient }) {
+  const store = useAgentStore();
+  const [busy, setBusy] = useState(false);
+
+  async function login() {
+    setBusy(true);
+    await store.login(client);
+    setBusy(false);
+  }
+
+  return <main className="setup-view" data-tauri-drag-region>
+    <section className="setup-panel login-panel">
+      <div className="brand-mark">B</div>
+      <h1>登入 BOYA</h1>
+      <p>使用 BOYA Web 的 Email 驗證碼或 Google 登入。登入後才能選擇工作資料夾與啟動桌面版。</p>
+      <button className="primary-button" type="button" onClick={() => void login()} disabled={busy}>
+        {busy ? <LoaderCircle className="spin" size={17} /> : null}
+        {busy ? "等待瀏覽器完成登入" : "使用 BOYA Web 登入"}
+      </button>
+      <p className="settings-hint">Skills 仍可直接下載與安裝，不需要登入。</p>
+      {store.error && <div className="error-banner">{store.error}</div>}
+    </section>
+  </main>;
 }
 
 function Setup({ client }: { client: DesktopAgentClient }) {
@@ -150,9 +176,21 @@ function Workbench({ client }: { client: DesktopAgentClient }) {
   const [settings, setSettings] = useState(false);
   const [renaming, setRenaming] = useState<SessionSummary | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const activeSession = useMemo(() => store.sessions.find((item) => item.path === store.activePath), [store.sessions, store.activePath]);
   useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [store.messages, store.streamingText, store.tools]);
+
+  async function logout() {
+    setLoggingOut(true);
+    try {
+      await store.logout(client);
+    } catch (error) {
+      useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) });
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   async function createSession() {
     try {
@@ -176,7 +214,7 @@ function Workbench({ client }: { client: DesktopAgentClient }) {
 
   return <div className="app-shell">
     <aside className="sidebar">
-      <div className="titlebar" data-tauri-drag-region><div className="brand-mark small">B</div><strong>BOYA</strong></div>
+      <div className="titlebar" data-tauri-drag-region><div className="brand-mark small">B</div><strong>BOYA</strong><div className="account-controls"><span title={store.account?.account.user.email}>{store.account?.account.user.name}</span>{store.account?.offline && <span className="offline-label">離線</span>}<IconButton label="登出 BOYA" onClick={() => void logout()} disabled={loggingOut || store.snapshot.running}><LogOut size={15} /></IconButton></div></div>
       <button type="button" className="workspace-button" disabled={store.snapshot.running} onClick={() => setSettings(true)}><FolderOpen size={16} /><span><small>工作資料夾</small>{store.workspace?.split("/").filter(Boolean).at(-1)}</span><ChevronRight size={15} /></button>
       <div className="sidebar-heading"><span>對話</span><IconButton label="新增對話" onClick={createSession} disabled={store.snapshot.running}><MessageSquarePlus size={17} /></IconButton></div>
       <div className="session-list">{store.sessions.map((session) => <SessionItem key={session.path} session={session} active={session.path === store.activePath} running={store.snapshot.running} onSelect={() => void store.selectSession(client, session.path).catch((error) => useAgentStore.setState({ error: String(error) }))} onRename={() => { setRenaming(session); setRenameValue(session.title); }} onArchive={() => void client.archiveSession(session.path).then(async (replacement) => { await store.refreshSessions(client); if (session.path === store.activePath) { if (replacement) await store.selectSession(client, replacement.path); else useAgentStore.setState({ activePath: null, messages: [], tools: [], streamingText: "" }); } }).catch((error) => useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }))} />)}{store.sessions.length === 0 && <div className="sidebar-empty">尚無對話</div>}</div>
@@ -234,5 +272,6 @@ export function App({ client = defaultClient }: AppProps) {
     };
   }, [client]);
   if (store.booting) return <div className="boot-screen"><LoaderCircle className="spin" size={22} />正在啟動 Pi</div>;
+  if (!store.account) return <LoginGate client={client} />;
   return store.configured ? <Workbench client={client} /> : <Setup client={client} />;
 }

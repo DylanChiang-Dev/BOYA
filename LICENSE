@@ -1,9 +1,23 @@
+BOYA is a multi-component repository with separate licenses.
+
+Desktop product
+---------------
+
 Copyright (c) 2026 Dylan Chiang. All rights reserved.
 
-Boya-specific source code and assets in this private repository are not
-licensed for copying, redistribution, modification, or commercial use.
+The BOYA Desktop source code, product UI, native host, product assets, and
+other files outside the Skills portion are proprietary. They may not be copied,
+redistributed, modified, or used commercially without written permission.
 
-This repository contains third-party software under separate licenses. Those
-licenses continue to apply to their respective portions. See LICENSES/ and
-THIRD_PARTY_NOTICES.md. In particular, the Open Science Desktop source used as
-the original base remains available under its MIT license.
+Official BOYA Skills
+--------------------
+
+The official Skills portion, including `skills/` and its supporting skill
+materials, is licensed under the MIT License. See `skills/LICENSE` for the
+complete license text.
+
+Third-party components
+----------------------
+
+Third-party software remains under its own license. See `LICENSES/` and
+`THIRD_PARTY_NOTICES.md` where applicable.

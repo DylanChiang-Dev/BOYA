@@ -67,6 +67,22 @@ export interface ProviderSettingsSnapshot {
   keyConfigured: boolean;
 }
 
+export type DesktopRole = "member" | "editor" | "admin" | "owner";
+export type MembershipTier = "free" | "vip";
+
+export interface DesktopAccount {
+  user: { id: string; name: string; email: string };
+  roles: DesktopRole[];
+  membership: { tier: MembershipTier; expiresAt: string | null };
+  desktopAccess: true;
+  sessionExpiresAt: string;
+}
+
+export interface DesktopAuthSnapshot {
+  account: DesktopAccount;
+  offline: boolean;
+}
+
 export interface ProviderImport {
   name: string;
   baseUrl: string;

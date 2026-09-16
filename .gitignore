@@ -38,9 +38,11 @@ venv/
 .superpowers/
 .worktrees/
 docs/superpowers/
+evals/results/
 
 # Local runtime & secrets (never commit)
 .boya-desktop/
+.boya-cache/
 secrets/
 *.key
 .env

@@ -1,43 +1,50 @@
-# BOYA Desktop
+# BOYA
 
-BOYA Desktop 0.2 is a minimal macOS desktop client for the official
-[Pi coding agent](https://github.com/earendil-works/pi/tree/main/packages/coding-agent).
-It keeps the researcher in control while Pi works only inside one selected
-local folder.
+BOYA is a local-first research workbench for humanities and social-science
+researchers. BOYA Desktop provides the workspace and Pi runtime; the bundled
+official Skills guide the user from a research question to a defensible paper.
 
-## Scope
+The product has one public Skills source and one authenticated Desktop account:
 
-- macOS 13 or newer on Apple Silicon.
-- OpenAI API keys stored in macOS Keychain.
-- OpenAI models reported by the pinned Pi runtime, with `gpt-5.6-terra` as the default.
-- Multiple Pi JSONL sessions per workspace: create, switch, rename, and recoverably archive.
-- Streaming Markdown, tool progress, one-time approvals, abort, and crash recovery.
-- Traditional Chinese UI. Source code, runtime policy, and repository documentation remain English.
+- **BOYA Desktop 0.3**: macOS Apple Silicon desktop client with browser-based
+  BOYA Account login, local workspaces, Pi sessions, and the official 17 Skills.
+- **BOYA Skills**: the MIT-licensed `skills/` library. Skills remain directly
+  downloadable and installable without an account.
+- **BOYA Web**: the companion account and community service at
+  `https://boya.caiada.edu.kg`. Desktop account data, membership, roles, and
+  device sessions are managed there.
 
-BOYA 0.2 intentionally does not include skills, MCP, notebooks, provenance,
-runs, artifacts, remote compute, OAuth, subagents, or project management.
+## Account and privacy
 
-## Runtime and security
+Desktop login uses the BOYA Web Device Authorization flow. The user signs in
+with Email OTP or Google in a browser, approves the displayed device code, and
+the native Rust host stores the resulting session only in the macOS Keychain.
+The token is not exposed to React, Pi, the workspace, command lines, or logs.
 
-The app pins official Pi `v0.84.1` by release archive and per-file SHA-256.
-Tauri starts Pi in RPC mode with explicit tools and one explicit BOYA policy
-extension. Project extensions, skills, prompt templates, themes, context-file
-discovery, package installation, telemetry, and update checks are disabled.
+Desktop is available to every signed-in member; VIP controls additional Web
+content and entitlements. Research files, conversations, model keys, and
+workspace paths stay local and are not sent to BOYA Web. A verified session can
+use the documented seven-day offline grace period when the service is
+unreachable; an explicit server revocation logs the user out immediately.
 
-Pi runs in a macOS sandbox limited to its bundled assets, the active workspace,
-and BOYA private session storage. Shell commands run in a second sandbox with
-no network or Keychain access. Sensitive files and symlink escapes are denied;
-editing or overwriting an existing file requires approval, and every shell
-command requires a separate one-time approval.
+## Official Skills
 
-The OpenAI key never enters the workspace, session JSONL, command line, logs,
-or the shell environment. Pi resolves it from Keychain through the fixed
-app-private `auth.json` command.
+The bundle contains 17 official Skills, with `boya` as the recommended entry
+point: academic-revision, ai-use-disclosure, bilingual-abstract,
+boya, citation-format, claim-audit, journal-fit, literature-analysis,
+literature-search, manuscript-review, paper-outline, reference-check,
+research-design, research-question, research-record, theoretical-framework,
+and thesis-defense-prep.
+
+The Desktop runtime disables ambient Skill discovery and passes only these
+verified bundled Skills to Pi. Public Skills can also be installed manually
+from this repository through an agent or by copying `skills/` into the target
+agent's skills directory.
 
 ## Development
 
-Prerequisites: macOS 13+, Apple Silicon, Node.js 20+, pnpm 10.15.1, Rust, and Xcode
-Command Line Tools.
+Prerequisites: macOS 13+, Apple Silicon, Node.js 20+, pnpm 10.15.1, Rust, and
+Xcode Command Line Tools.
 
 ```bash
 pnpm install --frozen-lockfile
@@ -49,10 +56,11 @@ pnpm typecheck
 pnpm lint
 pnpm build
 cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
-pnpm --filter @boya/desktop tauri dev
+python3 scripts/check-skills.py --check
+python3 scripts/check-evals.py
 ```
 
-Build unsigned Apple Silicon packages:
+Build an unsigned Apple Silicon package:
 
 ```bash
 pnpm --filter @boya/desktop tauri build \
@@ -62,16 +70,12 @@ pnpm --filter @boya/desktop tauri build \
 
 ## Repository structure
 
-- `apps/desktop/`: React UI and the Tauri host.
-- `apps/desktop/src-tauri/agent-runtime/`: the explicit BOYA Pi extension.
-- `packages/sdk/`: backend-neutral `AgentRuntimeClient` contracts and protocol helpers.
+- `apps/desktop/`: React UI and Tauri host.
+- `apps/desktop/src-tauri/agent-runtime/`: explicit BOYA Pi policy extension.
+- `packages/sdk/`: runtime contracts and JSONL protocol helpers.
+- `skills/`: official Skills source, licensed under MIT.
+- `evals/`, `examples/`, `knowledge/`, `templates/`: Skills support material.
 - `scripts/dev/`: pinned Pi acquisition, verification, and RPC smoke checks.
 
-## Data migration
-
-BOYA 0.2 starts a new app-private Pi session area. It does not migrate or
-delete earlier OpenCode sessions, settings, research data, or other private app
-state.
-
-Third-party notices and bundled licenses are listed in
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Desktop source and product assets are proprietary. The Skills license is
+available at [`skills/LICENSE`](skills/LICENSE).

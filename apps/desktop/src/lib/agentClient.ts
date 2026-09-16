@@ -4,6 +4,7 @@ import type {
   AgentRuntimeClient,
   ApprovalReply,
   ChatMessage,
+  DesktopAuthSnapshot,
   ModelInfo,
   ProviderImport,
   ProviderModel,
@@ -15,6 +16,9 @@ import type {
 } from "@boya/sdk";
 
 export interface DesktopAgentClient extends AgentRuntimeClient {
+  login(): Promise<DesktopAuthSnapshot>;
+  getAccount(): Promise<DesktopAuthSnapshot | null>;
+  logout(): Promise<void>;
   apiKeyStatus(): Promise<boolean>;
   setApiKey(key: string): Promise<void>;
   removeApiKey(): Promise<void>;
@@ -43,6 +47,9 @@ export class TauriAgentClient implements DesktopAgentClient {
     };
   }
 
+  login() { return invoke<DesktopAuthSnapshot>("desktop_auth_login"); }
+  getAccount() { return invoke<DesktopAuthSnapshot | null>("desktop_auth_get_account"); }
+  logout() { return invoke<void>("desktop_auth_logout"); }
   apiKeyStatus() { return invoke<boolean>("agent_api_key_status"); }
   setApiKey(key: string) { return invoke<void>("agent_set_api_key", { key }); }
   removeApiKey() { return invoke<void>("agent_remove_api_key"); }

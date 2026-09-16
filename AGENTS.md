@@ -1,51 +1,61 @@
-# Boya Desktop
+# BOYA Repository
 
-Private desktop product repository for a local-first humanities and
-social-science research workbench.
+This repository contains the BOYA Desktop product and the official BOYA
+research skills. Desktop source is proprietary; the bundled skills remain the
+public skills source of truth and retain their MIT license.
 
-## Product invariants
+## Product boundaries
 
-- Human-in-the-loop is non-negotiable. Never introduce an autonomous research
-  pipeline or let the agent choose research questions, sources, frameworks,
-  methods, interpretations, arguments, venues, or final authorship.
-- BOYA Desktop 0.2 does not load skills. If skills return in a later release,
-  the public `DylanChiang-Dev/BOYA-skills` repository remains their only source
-  of truth; never fork or edit that content privately.
-- Never fabricate references, facts, data, journal requirements, or completed
+- Human-in-the-loop is non-negotiable. Never let an agent choose research
+  questions, sources, frameworks, methods, interpretations, arguments, venues,
+  or final authorship.
+- BOYA Desktop may load only the official skills shipped in this repository.
+  The runtime must not discover project-local or third-party skills.
+- Never fabricate references, facts, journal requirements, or completed
   verification. Preserve provenance and make uncertainty visible.
-- Model-provider secrets stay in app-private storage and never enter the
-  workspace, provenance, logs, exports, or git.
+- Model-provider secrets and the BOYA account bearer token stay in private
+  native storage. They never enter the workspace, prompts, logs, exports, or
+  frontend state.
 
-## Architecture
+## Repository layout
 
-- `apps/desktop/`: Tauri 2 + React + TypeScript + Vite.
+- `apps/desktop/`: Tauri 2 + React + TypeScript + Vite product UI.
+- `apps/desktop/src-tauri/`: native host, authentication, Pi runtime, Keychain,
+  sandbox, and normalized event handling.
 - `packages/sdk/`: backend-neutral runtime contracts and JSONL protocol helpers.
-- `apps/desktop/src-tauri/src/agent_runtime.rs`: Pi process, session, Keychain,
-  sandbox, and normalized event host.
-- `apps/desktop/src-tauri/agent-runtime/`: the explicit BOYA Pi policy extension.
-- `scripts/dev/`: pinned Pi acquisition, verification, and RPC smoke checks.
+- `skills/`: the official 17-skill BOYA library and its single source of truth.
+- `evals/`, `examples/`, `knowledge/`, `templates/`, and `scripts/`: supporting
+  material for the official skills.
 
-Keep the frontend, desktop host, and runtime decoupled. The agent may only
-access the active workspace. Existing-file overwrite and destructive commands
-require one-time approval. Dependency installation and remote access are denied.
+## Skills rules
 
-## Working conventions
+- `skills/<name>/SKILL.md` is the canonical rule file for each skill.
+- Before changing a skill, read `CONVENTIONS.md` and update the relevant evals.
+- Human approval gates must remain explicit; do not introduce autonomous
+  research pipelines or unattended multi-agent orchestration.
+- Never invent sources or turn a failed lookup into a false claim. Mark missing
+  evidence as requiring human confirmation.
+- The root `README.md` is the product entry point. Keep the skill installation
+  and workflow documentation consistent with the bundled manifest.
 
-- Discussion defaults to Chinese; source code and repository documentation use English.
-- Keep changes small and verifiable. Update `PROGRESS.md` only for completed milestones.
-- Use `upstream` as fetch-only. Never push to it.
-- Run the Pi pin check and RPC smoke test, frontend tests, typecheck, lint, Rust
-  tests, audit, and the Apple Silicon package build before pushing product changes.
-- Model-provider configuration is persistent in-app settings, not a first-run
-  gate. First run only requires a workspace; API key, base URL, and the model
-  list are edited later in Settings, and keys are stored per provider in the
-  macOS Keychain.
-- Never call a blocking Tauri dialog API from a synchronous command. The macOS
-  dialog needs the main thread, so a blocking pick on that thread deadlocks the
-  window. Run the picker off the main thread.
-- Verify desktop behavior against a freshly installed bundle. A stale
-  `/Applications/BOYA Desktop.app` keeps running the old binary and hides
-  shipped changes; compare binary hashes when a fix appears missing.
-- Keep `pnpm-workspace.yaml` overrides at or above the current advisory
-  thresholds. `pnpm audit --audit-level high` is a CI gate, so a pin that was
-  patched yesterday can block a push today.
+## Desktop rules
+
+- The agent may access only the active workspace. Existing-file overwrite and
+  destructive commands require one-time approval.
+- The desktop account token is held by Rust and stored in the macOS Keychain;
+  it must never be passed to React, Pi, the workspace, command lines, or logs.
+- Device login uses only the fixed BOYA Web client and scope. Do not add a
+  second desktop account database or integrate Sub2API.
+- Never call a blocking Tauri dialog API from a synchronous command. Run the
+  picker off the main thread.
+- Keep model-provider configuration in persistent app settings, not a first-run
+  gate. Provider keys are stored per provider in the macOS Keychain.
+
+## Verification
+
+Run the relevant frontend tests, typecheck, lint, Rust tests, skills checks,
+and package/build checks before shipping. Verify a freshly installed bundle;
+an old `/Applications/BOYA Desktop.app` can hide shipped changes.
+
+Use `desktop-v*` tags for Desktop releases and `skills-v*` tags for Skills
+releases. Keep `upstream` fetch-only and do not push it.

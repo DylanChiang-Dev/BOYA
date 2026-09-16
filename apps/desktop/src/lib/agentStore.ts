@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type {
   ApprovalRequest,
   ChatMessage,
+  DesktopAuthSnapshot,
   ModelInfo,
   ProviderSettings,
   RuntimeEvent,
@@ -13,6 +14,7 @@ import type { DesktopAgentClient } from "./agentClient";
 
 interface AgentStore {
   booting: boolean;
+  account: DesktopAuthSnapshot | null;
   configured: boolean;
   keyConfigured: boolean;
   providerSettings: ProviderSettings;
@@ -28,6 +30,8 @@ interface AgentStore {
   models: ModelInfo[];
   versions: { boya: string; pi: string };
   error: string | null;
+  login(client: DesktopAgentClient): Promise<void>;
+  logout(client: DesktopAgentClient): Promise<void>;
   initialize(client: DesktopAgentClient, isCurrent?: () => boolean): Promise<void>;
   handleEvent(event: RuntimeEvent): void;
   refreshSessions(client: DesktopAgentClient): Promise<void>;
@@ -50,6 +54,7 @@ const initialProviderSettings: ProviderSettings = {
 
 export const useAgentStore = create<AgentStore>((set, get) => ({
   booting: true,
+  account: null,
   configured: false,
   keyConfigured: false,
   providerSettings: initialProviderSettings,
@@ -63,11 +68,35 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
   approval: null,
   approvalQueue: [],
   models: [],
-  versions: { boya: "0.2.0", pi: "v0.84.1" },
+  versions: { boya: "0.3.0", pi: "v0.84.1" },
   error: null,
+
+  async login(client) {
+    set({ booting: true, error: null });
+    try {
+      const account = await client.login();
+      set({ account });
+      await get().initialize(client);
+    } catch (error) {
+      set({ booting: false, account: null, error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+
+  async logout(client) {
+    await client.stop().catch(() => {});
+    await client.logout();
+    resetAgentStore();
+  },
 
   async initialize(client, isCurrent = () => true) {
     try {
+      const account = await client.getAccount();
+      if (!isCurrent()) return;
+      set({ account });
+      if (!account) {
+        set({ configured: false, booting: false });
+        return;
+      }
       const [provider, snapshot, versions] = await Promise.all([
         client.getProviderSettings(),
         client.snapshot(),
@@ -175,6 +204,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
 export function resetAgentStore() {
   useAgentStore.setState({
     booting: true,
+    account: null,
     configured: false,
     keyConfigured: false,
     providerSettings: initialProviderSettings,
@@ -188,7 +218,7 @@ export function resetAgentStore() {
     approval: null,
     approvalQueue: [],
     models: [],
-    versions: { boya: "0.2.0", pi: "v0.84.1" },
+    versions: { boya: "0.3.0", pi: "v0.84.1" },
     error: null,
   });
 }

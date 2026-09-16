@@ -1,4 +1,5 @@
 mod agent_runtime;
+mod auth;
 mod provider;
 
 use agent_runtime::AgentRuntimeState;
@@ -16,6 +17,9 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(AgentRuntimeState::default())
         .invoke_handler(tauri::generate_handler![
+            auth::desktop_auth_login,
+            auth::desktop_auth_get_account,
+            auth::desktop_auth_logout,
             agent_runtime::agent_api_key_status,
             agent_runtime::agent_set_api_key,
             agent_runtime::agent_remove_api_key,

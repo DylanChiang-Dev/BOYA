@@ -1,9 +1,10 @@
+use crate::auth;
 use crate::provider::{
     self, ProviderSettings, CUSTOM_PROVIDER_ID, DEFAULT_MODEL, OFFICIAL_PROVIDER_ID,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Component, Path, PathBuf};
@@ -126,7 +127,7 @@ pub fn runtime_sandbox_profile(workspace: &Path, private: &Path, package: &Path)
 (allow signal (target self))
 (allow file-read*)
 (deny file-read* (subpath (param "USER_HOME")))
-(allow file-read* (subpath (param "PACKAGE")) (literal (param "EXTENSION")) (subpath (param "WORKSPACE")) (subpath (param "PRIVATE")))
+(allow file-read* (subpath (param "PACKAGE")) (literal (param "EXTENSION")) (subpath (param "SKILLS")) (subpath (param "WORKSPACE")) (subpath (param "PRIVATE")))
 (allow file-write* (subpath (param "WORKSPACE")) (subpath (param "PRIVATE")))
 (allow network-outbound)
 (allow sysctl-read)
@@ -378,6 +379,7 @@ struct RuntimeConfig {
     model: String,
     secret: String,
     session_path: Option<PathBuf>,
+    skill_paths: Vec<PathBuf>,
 }
 
 struct RuntimeProcess {
@@ -497,6 +499,80 @@ fn locate_resource(app: &AppHandle, names: &[&str]) -> Result<PathBuf, String> {
         "Required runtime resource is missing: {}",
         names[0]
     ))
+}
+
+#[derive(Debug, Deserialize)]
+struct SkillsManifest {
+    skill_count: usize,
+    skills: Vec<SkillManifestEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SkillManifestEntry {
+    id: String,
+}
+
+fn locate_bundled_skills(app: &AppHandle) -> Result<Vec<PathBuf>, String> {
+    let root = locate_resource(app, &["skills", "../../../skills"])?;
+    let manifest_path = locate_resource(app, &["skills-manifest.json", "../../../skills-manifest.json"])?;
+    let manifest = serde_json::from_slice::<SkillsManifest>(
+        &fs::read(&manifest_path).map_err(|error| format!("Cannot read Skills manifest: {error}"))?,
+    )
+        .map_err(|error| format!("Invalid Skills manifest: {error}"))?;
+    validate_bundled_skills(&root, &manifest)
+}
+
+fn validate_bundled_skills(root: &Path, manifest: &SkillsManifest) -> Result<Vec<PathBuf>, String> {
+    if manifest.skill_count != 17 || manifest.skills.len() != 17 || manifest.skill_count != manifest.skills.len() {
+        return Err("BOYA Desktop requires exactly 17 official Skills".to_owned());
+    }
+
+    let mut ids = HashSet::with_capacity(manifest.skills.len());
+    for entry in &manifest.skills {
+        if entry.id.is_empty()
+            || entry.id.contains('/')
+            || entry.id.contains('\\')
+            || entry.id == "."
+            || entry.id == ".."
+        {
+            return Err("Skills manifest contains an invalid Skill id".to_owned());
+        }
+        if !ids.insert(entry.id.clone()) {
+            return Err(format!("Skills manifest contains a duplicate Skill id: {}", entry.id));
+        }
+    }
+
+    let actual_ids = fs::read_dir(root)
+        .map_err(|error| format!("Cannot read bundled Skills directory: {error}"))?
+        .filter_map(Result::ok)
+        .filter_map(|entry| entry.file_type().ok().filter(|file_type| file_type.is_dir()).map(|_| entry.file_name()))
+        .map(|name| name.to_string_lossy().into_owned())
+        .collect::<HashSet<_>>();
+    if actual_ids != ids {
+        let missing = ids.difference(&actual_ids).cloned().collect::<Vec<_>>();
+        let unexpected = actual_ids.difference(&ids).cloned().collect::<Vec<_>>();
+        return Err(format!(
+            "Bundled Skills do not match the manifest (missing: {}; unexpected: {})",
+            missing.join(", "),
+            unexpected.join(", ")
+        ));
+    }
+
+    let mut paths = Vec::with_capacity(manifest.skills.len());
+    for entry in &manifest.skills {
+        let path = root.join(&entry.id);
+        if !path.is_dir() || !path.join("SKILL.md").is_file() {
+            return Err(format!("Bundled Skill is incomplete: {}", entry.id));
+        }
+        let canonical = path
+            .canonicalize()
+            .map_err(|error| format!("Cannot resolve bundled Skill {}: {error}", entry.id))?;
+        if !canonical.starts_with(root) {
+            return Err(format!("Bundled Skill escapes the official Skills directory: {}", entry.id));
+        }
+        paths.push(canonical);
+    }
+    Ok(paths)
 }
 
 fn write_runtime_files(config: &RuntimeConfig) -> Result<(PathBuf, PathBuf), String> {
@@ -656,7 +732,7 @@ fn validate_prompt_message(message: &str) -> Result<&str, String> {
         return Err("Message cannot be empty".into());
     }
     if trimmed.starts_with('/') || trimmed.starts_with('!') {
-        return Err("Pi commands and shell shortcuts are disabled in BOYA 0.2".into());
+        return Err("Pi commands and shell shortcuts are disabled in BOYA 0.3".into());
     }
     Ok(trimmed)
 }
@@ -916,6 +992,8 @@ fn spawn_saved_runtime(app: &AppHandle, state: &Arc<Mutex<RuntimeInner>>) -> Res
         .arg("-D")
         .arg(format!("EXTENSION={}", config.extension.display()))
         .arg("-D")
+        .arg(format!("SKILLS={}", config.skill_paths[0].parent().unwrap_or(&config.skill_paths[0]).display()))
+        .arg("-D")
         .arg(format!("USER_HOME={}", user_home()?.display()))
         .arg(&config.pi_binary)
         .args(["--mode", "rpc", "--provider"])
@@ -941,6 +1019,9 @@ fn spawn_saved_runtime(app: &AppHandle, state: &Arc<Mutex<RuntimeInner>>) -> Res
             "--no-approve",
             "--offline",
         ]);
+    for skill_path in &config.skill_paths {
+        command.arg("--skill").arg(skill_path);
+    }
     if let Some(session) = &config.session_path {
         command.arg("--session").arg(session);
     }
@@ -1104,7 +1185,7 @@ fn keychain_get_for_account(account: &str) -> Result<Option<String>, String> {
 
 #[cfg(not(target_os = "macos"))]
 fn keychain_get_for_account(_account: &str) -> Result<Option<String>, String> {
-    Err("BOYA Desktop 0.2 only supports macOS".into())
+    Err("BOYA Desktop 0.3 only supports macOS".into())
 }
 
 fn keychain_get_for_provider(provider_id: &str) -> Result<Option<String>, String> {
@@ -1123,7 +1204,7 @@ fn keychain_set_for_provider(provider_id: &str, value: &str) -> Result<(), Strin
 
 #[cfg(not(target_os = "macos"))]
 fn keychain_set_for_provider(_provider_id: &str, _value: &str) -> Result<(), String> {
-    Err("BOYA Desktop 0.2 only supports macOS".into())
+    Err("BOYA Desktop 0.3 only supports macOS".into())
 }
 
 #[cfg(target_os = "macos")]
@@ -1142,7 +1223,7 @@ fn keychain_remove_for_provider(provider_id: &str) -> Result<(), String> {
 
 #[cfg(not(target_os = "macos"))]
 fn keychain_remove_for_provider(_provider_id: &str) -> Result<(), String> {
-    Err("BOYA Desktop 0.2 only supports macOS".into())
+    Err("BOYA Desktop 0.3 only supports macOS".into())
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1224,6 +1305,7 @@ pub fn agent_save_provider_settings(
 
 #[tauri::command]
 pub fn agent_save_workspace(app: AppHandle, workspace: String) -> Result<String, String> {
+    auth::ensure_cached_access()?;
     let workspace = canonical_workspace(&workspace)?;
     let value = workspace.to_string_lossy().into_owned();
     update_preferences(&app, "workspace", Value::String(value.clone()))?;
@@ -1281,6 +1363,7 @@ pub fn agent_start(
     workspace: Option<String>,
     session_path: Option<String>,
 ) -> Result<RuntimeSnapshot, String> {
+    auth::ensure_cached_access()?;
     let preferences = read_preferences(&app);
     let provider_settings = provider::read_provider_settings(&preferences)?;
     provider::validate_provider_settings(&provider_settings)?;
@@ -1300,6 +1383,7 @@ pub fn agent_start(
     let sessions_dir = private_dir.join("sessions");
     let pi_binary = locate_resource(&app, &["binaries/pi-aarch64-apple-darwin", "binaries/pi"])?;
     let extension = locate_resource(&app, &["agent-runtime/boya-policy.ts"])?;
+    let skill_paths = locate_bundled_skills(&app)?;
     let model = provider::selected_model(&preferences, &provider_settings)?;
     fs::create_dir_all(&sessions_dir)
         .map_err(|error| format!("Cannot create BOYA session storage: {error}"))?;
@@ -1332,6 +1416,7 @@ pub fn agent_start(
             model,
             secret,
             session_path,
+            skill_paths,
         });
         emit_snapshot(&app, &inner.snapshot);
     }
@@ -1686,6 +1771,7 @@ pub fn agent_versions() -> Value {
 /// event loop, so this command stays async and uses the callback API.
 #[tauri::command]
 pub async fn agent_pick_workspace(app: AppHandle) -> Result<Option<String>, String> {
+    auth::ensure_cached_access()?;
     use tauri_plugin_dialog::DialogExt;
     let (sender, mut receiver) = tauri::async_runtime::channel(1);
     app.dialog().file().pick_folder(move |path| {
@@ -1789,6 +1875,68 @@ mod tests {
         inner.desired_running = false;
         inner.desired_running = true;
         assert!(!inner.take_crash_restart_allowance());
+    }
+
+    #[test]
+    fn bundled_skills_require_an_exact_manifest_directory_match() {
+        let root = temp_dir("bundled-skills");
+        let ids = [
+            "academic-revision",
+            "ai-use-disclosure",
+            "bilingual-abstract",
+            "boya",
+            "citation-format",
+            "claim-audit",
+            "journal-fit",
+            "literature-analysis",
+            "literature-search",
+            "manuscript-review",
+            "paper-outline",
+            "reference-check",
+            "research-design",
+            "research-question",
+            "research-record",
+            "theoretical-framework",
+            "thesis-defense-prep",
+        ];
+        for id in ids {
+            let path = root.join(id);
+            fs::create_dir_all(&path).unwrap();
+            fs::write(path.join("SKILL.md"), "# skill").unwrap();
+        }
+        let manifest = SkillsManifest {
+            skill_count: ids.len(),
+            skills: ids
+                .iter()
+                .map(|id| SkillManifestEntry { id: (*id).into() })
+                .collect(),
+        };
+
+        let paths = validate_bundled_skills(&root, &manifest).unwrap();
+        assert_eq!(paths.len(), ids.len());
+        assert!(paths.iter().all(|path| path.starts_with(&root)));
+
+        fs::create_dir_all(root.join("unexpected")).unwrap();
+        assert!(validate_bundled_skills(&root, &manifest)
+            .unwrap_err()
+            .contains("unexpected"));
+
+        fs::remove_dir_all(root.join("unexpected")).unwrap();
+        let duplicate = SkillsManifest {
+            skill_count: ids.len(),
+            skills: ids
+                .iter()
+                .enumerate()
+                .map(|(index, id)| SkillManifestEntry {
+                    id: if index == ids.len() - 1 { "boya" } else { id }.into(),
+                })
+                .collect(),
+        };
+        assert!(validate_bundled_skills(&root, &duplicate)
+            .unwrap_err()
+            .contains("duplicate"));
+
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

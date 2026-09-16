@@ -1,6 +1,6 @@
 # apps/desktop
 
-The Tauri 2 + React + TypeScript + Vite application for BOYA Desktop 0.2.
+The Tauri 2 + React + TypeScript + Vite application for BOYA Desktop 0.3.
 
 ## Layout
 
@@ -8,8 +8,10 @@ The Tauri 2 + React + TypeScript + Vite application for BOYA Desktop 0.2.
   and settings UI.
 - `src/lib/agentClient.ts`: the Tauri implementation of `AgentRuntimeClient`.
 - `src/lib/agentStore.ts`: normalized runtime and UI state in Zustand.
+- `src-tauri/src/auth.rs`: BOYA Web Device Authorization, bearer session
+  validation, offline grace, and Keychain storage.
 - `src-tauri/src/agent_runtime.rs`: native Pi RPC lifecycle, sessions, Keychain,
-  sandbox profiles, and Tauri commands.
+  bundled Skills, sandbox profiles, and Tauri commands.
 - `src-tauri/agent-runtime/boya-policy.ts`: the explicit BOYA Pi policy extension.
 - `src-tauri/binaries/`: ignored, pinned Pi resources fetched for local builds.
 
@@ -22,7 +24,9 @@ details do not enter React. The Rust host emits normalized events on the single
 
 Pi can access only the selected workspace and BOYA private session storage.
 Provider credentials are stored in macOS Keychain and are never passed to the
-frontend or shell environment.
+frontend or shell environment. The account bearer token is held only by Rust,
+and Pi receives only the official bundled Skills through explicit `--skill`
+arguments.
 
 ## Checks
 
