@@ -523,6 +523,9 @@ fn locate_bundled_skills(app: &AppHandle) -> Result<Vec<PathBuf>, String> {
 }
 
 fn validate_bundled_skills(root: &Path, manifest: &SkillsManifest) -> Result<Vec<PathBuf>, String> {
+    let root = root
+        .canonicalize()
+        .map_err(|error| format!("Cannot resolve bundled Skills directory: {error}"))?;
     if manifest.skill_count != 17 || manifest.skills.len() != 17 || manifest.skill_count != manifest.skills.len() {
         return Err("BOYA Desktop requires exactly 17 official Skills".to_owned());
     }
@@ -542,7 +545,7 @@ fn validate_bundled_skills(root: &Path, manifest: &SkillsManifest) -> Result<Vec
         }
     }
 
-    let actual_ids = fs::read_dir(root)
+    let actual_ids = fs::read_dir(&root)
         .map_err(|error| format!("Cannot read bundled Skills directory: {error}"))?
         .filter_map(Result::ok)
         .filter_map(|entry| entry.file_type().ok().filter(|file_type| file_type.is_dir()).map(|_| entry.file_name()))
@@ -567,7 +570,7 @@ fn validate_bundled_skills(root: &Path, manifest: &SkillsManifest) -> Result<Vec
         let canonical = path
             .canonicalize()
             .map_err(|error| format!("Cannot resolve bundled Skill {}: {error}", entry.id))?;
-        if !canonical.starts_with(root) {
+        if !canonical.starts_with(&root) {
             return Err(format!("Bundled Skill escapes the official Skills directory: {}", entry.id));
         }
         paths.push(canonical);
