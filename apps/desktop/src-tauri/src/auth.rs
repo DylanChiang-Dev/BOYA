@@ -11,10 +11,12 @@ pub const DESKTOP_SCOPE: &str = "desktop:use";
 const DEVICE_CODE_URL: &str = "https://boya.caiada.edu.kg/api/auth/device/code";
 const DEVICE_TOKEN_URL: &str = "https://boya.caiada.edu.kg/api/auth/device/token";
 const DESKTOP_ME_URL: &str = "https://boya.caiada.edu.kg/api/v1/desktop/me";
+const SIGN_OUT_URL: &str = "https://boya.caiada.edu.kg/api/auth/sign-out";
 const KEYCHAIN_SERVICE: &str = "dev.dylanchiang.boya.account";
 const KEYCHAIN_ACCOUNT: &str = "desktop-session";
 const OFFLINE_GRACE: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(15);
+const LOGOUT_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -97,12 +99,16 @@ fn now_ms() -> i64 {
         .min(i64::MAX as u128) as i64
 }
 
-fn auth_client() -> Result<Client, String> {
+fn auth_client_with_timeout(timeout: Duration) -> Result<Client, String> {
     Client::builder()
-        .timeout(REQUEST_TIMEOUT)
+        .timeout(timeout)
         .user_agent(format!("BOYA Desktop/{}", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(|_| "無法建立 BOYA 登入連線".to_owned())
+}
+
+fn auth_client() -> Result<Client, String> {
+    auth_client_with_timeout(REQUEST_TIMEOUT)
 }
 
 fn validate_account(account: DesktopAccount) -> Result<DesktopAccount, String> {
@@ -378,7 +384,16 @@ pub async fn desktop_auth_get_account() -> Result<Option<DesktopAuthSnapshot>, S
 }
 
 #[tauri::command]
-pub fn desktop_auth_logout() -> Result<(), String> {
+pub async fn desktop_auth_logout() -> Result<(), String> {
+    if let Ok(Some(session)) = read_stored_session() {
+        if let Ok(client) = auth_client_with_timeout(LOGOUT_TIMEOUT) {
+            let _ = client
+                .post(SIGN_OUT_URL)
+                .bearer_auth(session.access_token)
+                .send()
+                .await;
+        }
+    }
     keychain_remove()
 }
 
