@@ -145,6 +145,25 @@ describe("BOYA Desktop", () => {
     expect(client.startCalls).toBe(0);
   });
 
+  it("opens an embedded Skill as a new draft without sending it", async () => {
+    const client = new FakeClient();
+    client.keyConfigured = true;
+    client.workspace = "/Users/research/field-notes";
+    const newSession = vi.spyOn(client, "newSession");
+    const prompt = vi.spyOn(client, "prompt");
+    render(<App client={client} />);
+    await screen.findByText("尚無對話");
+
+    fireEvent.click(screen.getByRole("button", { name: "Skills 廣場" }));
+    expect(await screen.findByRole("heading", { name: "Skills 廣場" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "用此 Skill 開始" })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "用此 Skill 開始" }));
+
+    await waitFor(() => expect((screen.getByLabelText("訊息") as HTMLTextAreaElement).value).toContain("$boya"));
+    expect(newSession).toHaveBeenCalledTimes(1);
+    expect(prompt).not.toHaveBeenCalled();
+  });
+
   it("streams text, expands tools, handles approval, stop, and runtime errors", async () => {
     const client = new FakeClient();
     client.keyConfigured = true;

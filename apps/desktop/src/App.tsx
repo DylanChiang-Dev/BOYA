@@ -8,6 +8,7 @@ import {
   FolderOpen,
   LoaderCircle,
   LogOut,
+  PanelsTopLeft,
   MessageSquarePlus,
   MoreHorizontal,
   Pencil,
@@ -20,6 +21,8 @@ import type { ApprovalReply, ApprovalRequest, SessionSummary, ToolActivity } fro
 import { ProviderSettingsPanel } from "./ProviderSettingsPanel";
 import { agentClient as defaultClient, type DesktopAgentClient } from "./lib/agentClient";
 import { resetAgentStore, useAgentStore } from "./lib/agentStore";
+import { SkillsLibrary } from "./SkillsLibrary";
+import type { SkillCatalogEntry } from "./skillsCatalog";
 
 interface AppProps {
   client?: DesktopAgentClient;
@@ -173,6 +176,7 @@ function ApprovalBar({ approval, client }: { approval: ApprovalRequest; client: 
 function Workbench({ client }: { client: DesktopAgentClient }) {
   const store = useAgentStore();
   const [input, setInput] = useState("");
+  const [view, setView] = useState<"workbench" | "skills">("workbench");
   const [settings, setSettings] = useState(false);
   const [renaming, setRenaming] = useState<SessionSummary | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -199,6 +203,18 @@ function Workbench({ client }: { client: DesktopAgentClient }) {
     } catch (error) { useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }); }
   }
 
+  async function startSkill(skill: SkillCatalogEntry) {
+    if (store.snapshot.running) return;
+    try {
+      await client.newSession();
+      useAgentStore.setState({ activePath: null, messages: [], streamingText: "", tools: [], approval: null, approvalQueue: [], error: null });
+      setInput(skill.defaultPrompt);
+      setView("workbench");
+    } catch (error) {
+      useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) });
+    }
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     const text = input.trim();
@@ -215,11 +231,15 @@ function Workbench({ client }: { client: DesktopAgentClient }) {
   return <div className="app-shell">
     <aside className="sidebar">
       <div className="titlebar" data-tauri-drag-region><div className="brand-mark small">B</div><strong>BOYA</strong><div className="account-controls"><span title={store.account?.account.user.email}>{store.account?.account.user.name}</span>{store.account?.offline && <span className="offline-label">離線</span>}<IconButton label="登出 BOYA" onClick={() => void logout()} disabled={loggingOut || store.snapshot.running}><LogOut size={15} /></IconButton></div></div>
+      <nav className="workspace-nav" aria-label="BOYA 功能">
+        <button type="button" className={view === "workbench" ? "active" : ""} onClick={() => setView("workbench")}><MessageSquarePlus size={16} />工作台</button>
+        <button type="button" className={view === "skills" ? "active" : ""} onClick={() => setView("skills")}><PanelsTopLeft size={16} />Skills 廣場</button>
+      </nav>
       <button type="button" className="workspace-button" disabled={store.snapshot.running} onClick={() => setSettings(true)}><FolderOpen size={16} /><span><small>工作資料夾</small>{store.workspace?.split("/").filter(Boolean).at(-1)}</span><ChevronRight size={15} /></button>
       <div className="sidebar-heading"><span>對話</span><IconButton label="新增對話" onClick={createSession} disabled={store.snapshot.running}><MessageSquarePlus size={17} /></IconButton></div>
       <div className="session-list">{store.sessions.map((session) => <SessionItem key={session.path} session={session} active={session.path === store.activePath} running={store.snapshot.running} onSelect={() => void store.selectSession(client, session.path).catch((error) => useAgentStore.setState({ error: String(error) }))} onRename={() => { setRenaming(session); setRenameValue(session.title); }} onArchive={() => void client.archiveSession(session.path).then(async (replacement) => { await store.refreshSessions(client); if (session.path === store.activePath) { if (replacement) await store.selectSession(client, replacement.path); else useAgentStore.setState({ activePath: null, messages: [], tools: [], streamingText: "" }); } }).catch((error) => useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }))} />)}{store.sessions.length === 0 && <div className="sidebar-empty">尚無對話</div>}</div>
     </aside>
-    <main className="conversation">
+    {view === "workbench" ? <main className="conversation">
       <header className="conversation-header" data-tauri-drag-region><div><h1>{activeSession?.title ?? "新對話"}</h1><span className={`runtime-dot ${store.snapshot.status}`} />{store.snapshot.model}</div><IconButton label="設定" onClick={() => setSettings(true)}><Settings size={18} /></IconButton></header>
       <div className="transcript">
         {store.messages.length === 0 && !store.streamingText && <div className="empty-conversation"><div className="brand-mark">B</div><h2>準備開始</h2><p>輸入你想處理的工作。Pi 只會存取目前的資料夾。</p></div>}
@@ -230,7 +250,7 @@ function Workbench({ client }: { client: DesktopAgentClient }) {
       </div>
       {store.error && <div className="runtime-error"><span>{store.error}</span><IconButton label="關閉錯誤" onClick={() => useAgentStore.setState({ error: null })}><X size={15} /></IconButton></div>}
       <form className="composer" onSubmit={submit}><textarea aria-label="訊息" value={input} onChange={(event) => setInput(event.target.value)} placeholder="傳訊息給 Pi" rows={1} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />{store.snapshot.running ? <IconButton label="停止" onClick={() => void client.abort().catch((error) => useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }))}><Square size={16} fill="currentColor" /></IconButton> : <button className="send-button" type="submit" aria-label="傳送" disabled={!input.trim()}><Send size={17} /></button>}</form>
-    </main>
+    </main> : <SkillsLibrary running={store.snapshot.running} onStart={(skill) => void startSkill(skill)} />}
     {store.approval && <ApprovalBar approval={store.approval} client={client} />}
     {settings && <ProviderSettingsPanel client={client} onClose={() => setSettings(false)} />}
     {renaming && <div className="modal-backdrop"><form className="rename-dialog" onSubmit={async (event) => { event.preventDefault(); try { await client.renameSession(renaming.path, renameValue); setRenaming(null); await store.refreshSessions(client); await store.selectSession(client, renaming.path); } catch (error) { useAgentStore.setState({ error: error instanceof Error ? error.message : String(error) }); } }}><h2>重新命名對話</h2><label className="field"><span>對話名稱</span><input aria-label="對話名稱" autoFocus value={renameValue} onChange={(event) => setRenameValue(event.target.value)} /></label><div className="button-row"><button type="button" className="secondary-button" onClick={() => setRenaming(null)}>取消</button><button type="submit" className="primary-button compact">儲存名稱</button></div></form></div>}
