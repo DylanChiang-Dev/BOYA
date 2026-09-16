@@ -6,8 +6,8 @@
     "name": "Dylan Chiang 蔣濤",
     "url": "https://github.com/DylanChiang-Dev"
   },
-  "homepage": "https://github.com/DylanChiang-Dev/BOYA-skills",
-  "repository": "https://github.com/DylanChiang-Dev/BOYA-skills",
+  "homepage": "https://github.com/DylanChiang-Dev/BOYA",
+  "repository": "https://github.com/DylanChiang-Dev/BOYA",
   "license": "MIT",
   "keywords": [
     "research",
@@ -26,6 +26,6 @@
       "Research",
       "Writing"
     ],
-    "websiteURL": "https://github.com/DylanChiang-Dev/BOYA-skills"
+    "websiteURL": "https://github.com/DylanChiang-Dev/BOYA"
   }
 }
