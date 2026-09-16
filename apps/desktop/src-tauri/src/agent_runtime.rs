@@ -1916,8 +1916,9 @@ mod tests {
         };
 
         let paths = validate_bundled_skills(&root, &manifest).unwrap();
+        let canonical_root = root.canonicalize().unwrap();
         assert_eq!(paths.len(), ids.len());
-        assert!(paths.iter().all(|path| path.starts_with(&root)));
+        assert!(paths.iter().all(|path| path.starts_with(&canonical_root)));
 
         fs::create_dir_all(root.join("unexpected")).unwrap();
         assert!(validate_bundled_skills(&root, &manifest)
